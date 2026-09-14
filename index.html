@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="OrmiTech Admin Portal - manage users, content and system settings.">
+  <title>OrmiTech Admin Portal</title>
+  <style>
+    :root {
+      --accent: #6366f1;
+      --accent-soft: #eef2ff;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --ok: #16a34a;
+      --ok-soft: #dcfce7;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; }
+    .brand span { color: var(--accent); }
+
+    .nav ul { list-style: none; display: flex; gap: 1.25rem; flex-wrap: wrap; }
+    .nav a { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
+    .nav a:hover { color: var(--accent); }
+
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 4rem 1.5rem;
+    }
+
+    .hero { text-align: center; margin-bottom: 3.5rem; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--ok-soft);
+      color: var(--ok);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.45rem 1rem;
+      border-radius: 999px;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .lead { color: var(--muted); font-size: 1.15rem; max-width: 620px; margin: 0 auto 2rem; }
+
+    .btn {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 0.8rem 1.6rem;
+      border-radius: 10px;
+    }
+
+    .btn:hover { opacity: 0.9; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    .card .label { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .card .value { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; margin: 0.25rem 0; }
+    .card .trend { color: var(--ok); font-size: 0.9rem; font-weight: 600; }
+    .card h3 { font-size: 1.1rem; margin-bottom: 0.4rem; }
+    .card p { color: var(--muted); font-size: 0.95rem; }
+
+    h2 { font-size: 1.5rem; letter-spacing: -0.02em; margin: 3rem 0 1.25rem; }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.875rem;
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav">
+      <div class="brand">Ormi<span>Tech</span> Admin</div>
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#modules">Modules</a></li>
+        <li><a href="#">Settings</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="status">🟢 Service is Live &amp; Operational</div>
+      <h1>Welcome to <span>OrmiTech Admin Portal</span></h1>
+      <p class="lead">Central control panel for managing users, content, orders and system configuration across the OrmiTech platform.</p>
+      <a class="btn" href="#overview">Open Dashboard</a>
+    </section>
+
+    <section id="overview" class="grid">
+      <div class="card">
+        <div class="label">Total Users</div>
+        <div class="value">12,480</div>
+        <div class="trend">+4.2% this week</div>
+      </div>
+      <div class="card">
+        <div class="label">Active Sessions</div>
+        <div class="value">1,327</div>
+        <div class="trend">+1.8% today</div>
+      </div>
+      <div class="card">
+        <div class="label">Orders Processed</div>
+        <div class="value">3,956</div>
+        <div class="trend">+9.1% this month</div>
+      </div>
+      <div class="card">
+        <div class="label">System Uptime</div>
+        <div class="value">99.98%</div>
+        <div class="trend">Last 30 days</div>
+      </div>
+    </section>
+
+    <h2 id="modules">Admin Modules</h2>
+    <section class="grid">
+      <div class="card">
+        <h3>User Management</h3>
+        <p>Create, edit and deactivate accounts. Assign roles and permissions.</p>
+      </div>
+      <div class="card">
+        <h3>Content Control</h3>
+        <p>Review, publish and moderate products, pages and announcements.</p>
+      </div>
+      <div class="card">
+        <h3>Reports &amp; Analytics</h3>
+        <p>Track revenue, traffic and engagement with exportable reports.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>&copy; 2026 OrmiTech &middot; Admin Portal &middot; Placeholder build</footer>
+</body>
+</html>
