@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { env } from '@/lib/constants';
 
+// ormitech-api serves everything under /api/v1, so every path in the api modules is relative to that.
 export const axiosClient = axios.create({
-  baseURL: env.apiUrl,
+  baseURL: `${env.apiUrl.replace(/\/+$/, '')}/api/v1`,
   headers: { Accept: 'application/json' },
 });
 

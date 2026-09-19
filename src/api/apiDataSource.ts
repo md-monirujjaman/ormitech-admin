@@ -18,6 +18,27 @@ import type { AdminDataSource } from './adminDataSource';
  * Selected only when `VITE_ADMIN_DATA_SOURCE=api`. Every endpoint behind it is still unbuilt on ormitech-api,
  * so requests will fail until it exists — deliberately, rather than falling back to mock data and making the
  * Admin look connected when it isn't.
+ *
+ * INTEGRATION REQUIREMENT — what ormitech-api must add before this source can be switched on.
+ * The existing API is deliberately tenant-scoped: `TenantContext` comes from the caller's own access token and
+ * the schema-level tenant plugin refuses any query without a concrete organizationId. A cross-tenant control
+ * plane therefore cannot reuse the customer-facing endpoints; it needs its own, authorized by admin role:
+ *
+ *   GET/PATCH  /admin/organizations           list every tenant, change status  (organizations.read/write)
+ *   GET        /admin/organizations/:id       one tenant with its overrides
+ *   GET/POST/PATCH /admin/organizations/:id/users
+ *   PATCH      /admin/organizations/:id/plan          assign a plan
+ *   PUT        /admin/organizations/:id/entitlements  feature/channel/limit overrides
+ *   GET/PUT    /admin/organizations/:id/ai            AI configuration per tenant
+ *   GET        /admin/organizations/:id/usage
+ *   GET/POST/PATCH /admin/plans               plan catalogue
+ *   GET        /admin/features, /admin/limits, /admin/channels   catalogues
+ *   GET        /admin/usage                   platform-wide usage rows
+ *   GET/PATCH  /admin/subscriptions, /admin/payments, /admin/invoices
+ *   GET        /admin/billing/summary, /admin/billing/charts
+ *   POST       /admin/auth/login|refresh|logout        separate admin identity
+ *
+ * Nothing in the Admin fabricates these; until they exist the mock source stays the default.
  */
 export const apiDataSource: AdminDataSource = {
   id: 'api',
