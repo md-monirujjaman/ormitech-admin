@@ -9,7 +9,7 @@ eventually takes goes through `ormitech-api`.
 OrmiTech Admin → OrmiTech API → Database / Services → Web / Client / Docs / Integrations
 ```
 
-Production: `https://ormitech-admin.monirujjaman.me`
+Production: `https://panel.ormitechit.com`
 Local: `http://localhost:5173`
 
 ## Status

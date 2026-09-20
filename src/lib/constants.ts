@@ -1,9 +1,9 @@
 /** The only place in the app that reads `import.meta.env` — every Vite env var is public, never a secret. */
 export const env = {
   apiUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:4000',
-  clientUrl: import.meta.env.VITE_CLIENT_URL ?? 'https://ormitech-client.monirujjaman.me',
-  docsUrl: import.meta.env.VITE_DOCS_URL ?? 'https://ormitech-docs.monirujjaman.me',
-  webUrl: import.meta.env.VITE_WEB_URL ?? 'https://ormitech-web.monirujjaman.me',
+  clientUrl: import.meta.env.VITE_CLIENT_URL ?? 'https://app.ormitechit.com',
+  docsUrl: import.meta.env.VITE_DOCS_URL ?? 'https://docs.ormitechit.com',
+  webUrl: import.meta.env.VITE_WEB_URL ?? 'https://www.ormitechit.com',
 } as const;
 
 /**
