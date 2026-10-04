@@ -1,4 +1,5 @@
 import type { InvoiceListParams, PaymentListParams, SubscriptionListParams } from '@/types/billing';
+import type { AdminListParams } from '@/types/auth';
 import type { OrganizationListParams } from '@/types/organization';
 
 /** Every TanStack Query key in one place, so invalidation after a mutation can't miss a screen. */
@@ -11,6 +12,11 @@ export const queryKeys = {
   plans: {
     all: ['plans'] as const,
     detail: (id: string) => ['plans', id] as const,
+  },
+  admins: {
+    all: ['admins'] as const,
+    list: (params: AdminListParams) => ['admins', 'list', params] as const,
+    roles: ['admins', 'roles'] as const,
   },
   organizations: {
     all: ['organizations'] as const,

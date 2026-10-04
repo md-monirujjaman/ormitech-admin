@@ -45,7 +45,7 @@ export function ProfileMenu() {
           <span className="truncate text-xs font-normal text-muted-foreground">{admin.email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => navigate(ROUTES.settings)}>
+        <DropdownMenuItem onSelect={() => navigate(ROUTES.profile)}>
           <User className="size-4" aria-hidden />
           Profile
         </DropdownMenuItem>
@@ -59,8 +59,10 @@ export function ProfileMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onSelect={() => {
-            logout();
+          onSelect={async () => {
+            // Awaited: signing out revokes the session on the API first, so the refresh token stops working
+            // whatever this browser keeps.
+            await logout();
             navigate(ROUTES.login, { replace: true });
           }}
           className="text-destructive focus:text-destructive"

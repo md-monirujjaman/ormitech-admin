@@ -6,9 +6,12 @@ import type { AdminUser, AuthSession } from '@/types/auth';
 interface AuthState {
   admin: AdminUser | null;
   accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   hasHydrated: boolean;
   setSession: (session: AuthSession) => void;
+  /** Replaces the stored administrator after a profile change, without touching the session. */
+  setAdmin: (admin: AdminUser) => void;
   logout: () => void;
 }
 
@@ -22,20 +25,32 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       admin: null,
       accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
       hasHydrated: false,
       setSession: (session) => {
         setAccessToken(session.accessToken);
-        set({ admin: session.admin, accessToken: session.accessToken, isAuthenticated: true });
+        set({
+          admin: session.admin,
+          accessToken: session.accessToken,
+          refreshToken: session.refreshToken,
+          isAuthenticated: true,
+        });
       },
+      setAdmin: (admin) => set({ admin }),
       logout: () => {
         setAccessToken(null);
-        set({ admin: null, accessToken: null, isAuthenticated: false });
+        set({ admin: null, accessToken: null, refreshToken: null, isAuthenticated: false });
       },
     }),
     {
       name: 'ormitech-admin-auth',
-      partialize: (state) => ({ admin: state.admin, accessToken: state.accessToken, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({
+        admin: state.admin,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        isAuthenticated: state.isAuthenticated,
+      }),
       onRehydrateStorage: () => (state) => {
         if (state?.accessToken) setAccessToken(state.accessToken);
         // Mutating `state` here doesn't notify subscribers — go through `setState` so ProtectedRoute re-renders.

@@ -19,6 +19,8 @@ export const ROUTES = {
   login: '/login',
   forgotPassword: '/forgot-password',
   dashboard: '/dashboard',
+  /** The signed-in administrator's own account: name, and the password change. */
+  profile: '/profile',
 
   organizations: '/organizations',
   users: '/users',
