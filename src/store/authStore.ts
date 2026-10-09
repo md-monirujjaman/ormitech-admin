@@ -53,11 +53,17 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state?.accessToken) setAccessToken(state.accessToken);
-        // Mutating `state` here doesn't notify subscribers — go through `setState` so ProtectedRoute re-renders.
-        useAuthStore.setState({ hasHydrated: true });
       },
     },
   ),
 );
+
+// hasHydrated must be set AFTER create() returns so useAuthStore is defined.
+useAuthStore.persist.onFinishHydration(() => {
+  useAuthStore.setState({ hasHydrated: true });
+});
+if (useAuthStore.persist.hasHydrated()) {
+  useAuthStore.setState({ hasHydrated: true });
+}
 
 setUnauthorizedHandler(() => useAuthStore.getState().logout());
