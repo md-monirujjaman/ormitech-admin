@@ -1,4 +1,5 @@
 import { axiosClient } from './axiosClient';
+import { organizationApi } from './organizationApi';
 import type { Organization } from '@/types/organization';
 import type { EntitlementOverrides, UsageSnapshot } from '@/types/entitlements';
 
@@ -10,12 +11,26 @@ import type { EntitlementOverrides, UsageSnapshot } from '@/types/entitlements';
  */
 const unwrap = <T>(promise: Promise<{ data: { data: T } }>) => promise.then((response) => response.data.data);
 
+/**
+ * Both mutations answer with what they changed — the organization's plan, or the stored override set — and
+ * then the organization is read back, because that is the whole record the caller is typed to receive and
+ * only one endpoint assembles it. `updateAiConfiguration` in `apiDataSource` does the same thing for the same
+ * reason.
+ */
 export const entitlementApi = {
-  assignPlan: (organizationId: string, planId: string) =>
-    unwrap<Organization>(axiosClient.patch(`/admin/organizations/${organizationId}/plan`, { planId })),
+  assignPlan: async (organizationId: string, planId: string): Promise<Organization> => {
+    await unwrap<{ id: string; plan: string }>(
+      axiosClient.patch(`/admin/organizations/${organizationId}/plan`, { planId }),
+    );
+    return organizationApi.get(organizationId);
+  },
 
-  updateOverrides: (organizationId: string, overrides: EntitlementOverrides) =>
-    unwrap<Organization>(axiosClient.put(`/admin/organizations/${organizationId}/entitlements`, overrides)),
+  updateOverrides: async (organizationId: string, overrides: EntitlementOverrides): Promise<Organization> => {
+    await unwrap<EntitlementOverrides>(
+      axiosClient.put(`/admin/organizations/${organizationId}/entitlements`, overrides),
+    );
+    return organizationApi.get(organizationId);
+  },
 
   getUsage: (organizationId: string) => unwrap<UsageSnapshot>(axiosClient.get(`/admin/organizations/${organizationId}/usage`)),
 };

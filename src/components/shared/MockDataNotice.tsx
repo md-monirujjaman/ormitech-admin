@@ -19,7 +19,8 @@ export function MockDataNotice() {
         </Badge>
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">
-        In-memory fixtures. ormitech-api&apos;s admin endpoints don&apos;t exist yet — changes persist only until this page reloads.
+        In-memory fixtures — changes persist only until this page reloads. Set VITE_ADMIN_DATA_SOURCE=api to read
+        and write the real platform database instead.
       </TooltipContent>
     </Tooltip>
   );

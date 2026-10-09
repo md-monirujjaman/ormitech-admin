@@ -4,6 +4,9 @@ import type { OrganizationListParams } from '@/types/organization';
 
 /** Every TanStack Query key in one place, so invalidation after a mutation can't miss a screen. */
 export const queryKeys = {
+  dashboard: {
+    stats: ['dashboard', 'stats'] as const,
+  },
   catalog: {
     features: ['catalog', 'features'] as const,
     channels: ['catalog', 'channels'] as const,
@@ -17,6 +20,24 @@ export const queryKeys = {
     all: ['admins'] as const,
     list: (params: AdminListParams) => ['admins', 'list', params] as const,
     roles: ['admins', 'roles'] as const,
+  },
+  leads: {
+    all: ['leads'] as const,
+    list: (params: unknown) => ['leads', 'list', params] as const,
+    detail: (organizationId: string, leadId: string) => ['leads', organizationId, leadId] as const,
+  },
+  conversations: {
+    all: ['conversations'] as const,
+    list: (organizationId: string, params: unknown) => ['conversations', organizationId, 'list', params] as const,
+    detail: (organizationId: string, conversationId: string) => ['conversations', organizationId, conversationId] as const,
+    messages: (organizationId: string, conversationId: string, page: number) =>
+      ['conversations', organizationId, conversationId, 'messages', page] as const,
+  },
+  members: {
+    activity: (organizationId: string, memberId: string, page: number) =>
+      ['members', organizationId, memberId, 'activity', page] as const,
+    sessions: (organizationId: string, memberId: string, page: number) =>
+      ['members', organizationId, memberId, 'sessions', page] as const,
   },
   organizations: {
     all: ['organizations'] as const,

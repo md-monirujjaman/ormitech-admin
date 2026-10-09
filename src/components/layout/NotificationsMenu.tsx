@@ -3,6 +3,7 @@ import { Bell, MessageCircle, Server, Webhook } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { isMockDataSource } from '@/api/dataSource';
 import { cn } from '@/lib/utils';
 import type { AdminNotification } from '@/types/admin';
 
@@ -33,7 +34,9 @@ const SEVERITY_DOT: Record<AdminNotification['severity'], string> = {
 };
 
 export function NotificationsMenu() {
-  const [notifications] = useState(MOCK_NOTIFICATIONS);
+  // Against the real API there is nothing to show: ormitech-api raises no admin notifications and stores
+  // none, so the menu says so rather than keeping the fixtures on screen beside real figures.
+  const [notifications] = useState(isMockDataSource ? MOCK_NOTIFICATIONS : []);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
@@ -55,6 +58,11 @@ export function NotificationsMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <div className="max-h-80 space-y-0.5 overflow-y-auto">
+          {notifications.length === 0 && (
+            <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+              No notifications. Administrator actions are recorded in the audit log.
+            </p>
+          )}
           {notifications.map((notification) => {
             const Icon = SEVERITY_ICON[notification.severity];
             return (

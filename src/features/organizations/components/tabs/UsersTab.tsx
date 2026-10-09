@@ -19,6 +19,7 @@ import {
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { MemberHistory } from '@/features/conversations/components/MemberHistory';
 import { UserFormDialog } from '@/features/organizations/components/UserFormDialog';
 import {
   useCreateOrganizationUser,
@@ -187,7 +188,7 @@ export function UsersTab({ organizationId, canWrite }: { organizationId: string;
 
       {viewing && (
         <Dialog open onOpenChange={(open) => !open && setViewing(null)}>
-          <DialogContent className="max-w-md p-6">
+          <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto p-6">
             <DialogHeader>
               <DialogTitle>{viewing.name}</DialogTitle>
               <DialogDescription>{viewing.email}</DialogDescription>
@@ -206,6 +207,9 @@ export function UsersTab({ organizationId, canWrite }: { organizationId: string;
                 </div>
               ))}
             </dl>
+
+            {/* What this member has done here, and how they have signed in — both read from the API. */}
+            <MemberHistory organizationId={organizationId} memberId={viewing.id} />
           </DialogContent>
         </Dialog>
       )}

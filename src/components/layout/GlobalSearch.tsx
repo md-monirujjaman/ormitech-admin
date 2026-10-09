@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Building2, FileText, MessageSquare, Receipt, Search, User, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { isMockDataSource } from '@/api/dataSource';
+import { organizationApi } from '@/api/organizationApi';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ROUTES } from '@/lib/constants';
@@ -8,9 +11,12 @@ import { cn } from '@/lib/utils';
 import type { SearchResultItem } from '@/types/admin';
 
 /**
- * Local mock index — Phase 1 only, per spec: UI foundation for a future search across organizations, users,
- * conversations, leads, invoices and documentation. No Elasticsearch, no external index; this is not connected
- * to a real dataset.
+ * The fixture index, used while the fixture data source is selected.
+ *
+ * Against the real API this is replaced by a search of the one thing ormitech-api can search: organizations,
+ * by name, slug or contact address, through `GET /admin/organizations?search=`. Users, conversations, leads,
+ * invoices and documentation have no search endpoint, so they are not offered rather than offered and empty —
+ * a result list that silently covers one entity type is less confusing than one that pretends to cover six.
  */
 const MOCK_RESULTS: SearchResultItem[] = [
   { id: 'org-1', type: 'organization', title: 'Acme Retail', subtitle: 'Organization · Growth plan', href: ROUTES.organizations },
@@ -51,11 +57,30 @@ export function GlobalSearch() {
     if (!open) setQuery('');
   }, [open]);
 
-  const results = useMemo(() => {
-    if (!query.trim()) return MOCK_RESULTS;
-    const q = query.toLowerCase();
-    return MOCK_RESULTS.filter((item) => item.title.toLowerCase().includes(q) || item.subtitle?.toLowerCase().includes(q));
-  }, [query]);
+  const term = query.trim();
+
+  const organizationsQuery = useQuery({
+    queryKey: ['global-search', 'organizations', term],
+    queryFn: () => organizationApi.list({ query: term, page: 1, pageSize: 8 }),
+    enabled: !isMockDataSource && open,
+    placeholderData: keepPreviousData,
+  });
+
+  const results = useMemo<SearchResultItem[]>(() => {
+    if (isMockDataSource) {
+      if (!term) return MOCK_RESULTS;
+      const q = term.toLowerCase();
+      return MOCK_RESULTS.filter((item) => item.title.toLowerCase().includes(q) || item.subtitle?.toLowerCase().includes(q));
+    }
+
+    return (organizationsQuery.data?.items ?? []).map((organization) => ({
+      id: organization.id,
+      type: 'organization' as const,
+      title: organization.name,
+      subtitle: `Organization · ${organization.slug}`,
+      href: `${ROUTES.organizations}/${organization.id}`,
+    }));
+  }, [term, organizationsQuery.data]);
 
   return (
     <>
@@ -78,13 +103,17 @@ export function GlobalSearch() {
               autoFocus
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search organizations, users, conversations, leads, invoices, docs…"
+              placeholder={isMockDataSource ? 'Search organizations, users, conversations, leads, invoices, docs…' : 'Search organizations by name, slug or email…'}
               className="border-0 shadow-none focus-visible:ring-0"
             />
           </div>
           <div className="max-h-80 overflow-y-auto p-2">
-            {results.length === 0 ? (
-              <p className="px-2 py-6 text-center text-sm text-muted-foreground">No results for "{query}"</p>
+            {organizationsQuery.isError ? (
+              <p className="px-2 py-6 text-center text-sm text-muted-foreground">Search is unavailable right now.</p>
+            ) : results.length === 0 ? (
+              <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+                {term ? `No results for "${term}"` : 'Type to search organizations.'}
+              </p>
             ) : (
               results.map((result) => {
                 const Icon = TYPE_ICON[result.type];

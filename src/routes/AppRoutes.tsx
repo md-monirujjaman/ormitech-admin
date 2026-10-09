@@ -27,6 +27,10 @@ const InvoicesPage = lazy(() => import('@/features/invoices/pages/InvoicesPage')
 const UsagePage = lazy(() => import('@/features/usage/pages/UsagePage'));
 const AdminsPage = lazy(() => import('@/features/admins/pages/AdminsPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
+const LeadsPage = lazy(() => import('@/features/leads/pages/LeadsPage'));
+const LeadDetailPage = lazy(() => import('@/features/leads/pages/LeadDetailPage'));
+const ConversationsPage = lazy(() => import('@/features/conversations/pages/ConversationsPage'));
+const ConversationDetailPage = lazy(() => import('@/features/conversations/pages/ConversationDetailPage'));
 
 /** Routes with a real page — everything else in NAV_SECTIONS renders <ComingSoon> instead. */
 const IMPLEMENTED_ROUTES = new Set<string>([
@@ -43,6 +47,8 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.invoices,
   ROUTES.usage,
   ROUTES.adminUsers,
+  ROUTES.leads,
+  ROUTES.conversations,
 ]);
 
 const comingSoonItems = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !IMPLEMENTED_ROUTES.has(item.href));
@@ -85,6 +91,48 @@ export function AppRoutes() {
               <AdminRoute permission="admin_users.read">
                 <Lazy label="Loading administrators…">
                   <AdminsPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.leads}
+            element={
+              <AdminRoute permission="leads.read">
+                <Lazy label="Loading leads…">
+                  <LeadsPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path={`${ROUTES.leads}/:organizationId/:leadId`}
+            element={
+              <AdminRoute permission="leads.read">
+                <Lazy label="Loading lead…">
+                  <LeadDetailPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.conversations}
+            element={
+              <AdminRoute permission="conversations.read">
+                <Lazy label="Loading conversations…">
+                  <ConversationsPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path={`${ROUTES.conversations}/:organizationId/:conversationId`}
+            element={
+              <AdminRoute permission="conversations.read">
+                <Lazy label="Loading conversation…">
+                  <ConversationDetailPage />
                 </Lazy>
               </AdminRoute>
             }
