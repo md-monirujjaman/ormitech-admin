@@ -26,6 +26,12 @@ export interface AiConfiguration {
   messageLimit: LimitValue;
   model: string | null;
   systemPrompt: string;
+  imageReadEnabled: boolean;
+  voiceEnabled: boolean;
+  commentReplyEnabled: boolean;
+  followUpEnabled: boolean;
+  followUpDelayMinutes: number;
+  linkReadEnabled: boolean;
   knowledgeSources: KnowledgeSource[];
   updatedAt: string;
 }

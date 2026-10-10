@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -48,6 +49,12 @@ export function AiTab({
       messageLimit: organization.ai.messageLimit,
       model: organization.ai.model,
       systemPrompt: organization.ai.systemPrompt,
+      imageReadEnabled: organization.ai.imageReadEnabled,
+      voiceEnabled: organization.ai.voiceEnabled,
+      commentReplyEnabled: organization.ai.commentReplyEnabled,
+      followUpEnabled: organization.ai.followUpEnabled,
+      followUpDelayMinutes: organization.ai.followUpDelayMinutes,
+      linkReadEnabled: organization.ai.linkReadEnabled,
     },
   });
 
@@ -62,6 +69,12 @@ export function AiTab({
       messageLimit: organization.ai.messageLimit,
       model: organization.ai.model,
       systemPrompt: organization.ai.systemPrompt,
+      imageReadEnabled: organization.ai.imageReadEnabled,
+      voiceEnabled: organization.ai.voiceEnabled,
+      commentReplyEnabled: organization.ai.commentReplyEnabled,
+      followUpEnabled: organization.ai.followUpEnabled,
+      followUpDelayMinutes: organization.ai.followUpDelayMinutes,
+      linkReadEnabled: organization.ai.linkReadEnabled,
     });
   }, [organization.ai, reset]);
 
@@ -122,6 +135,43 @@ export function AiTab({
                 render={({ field }) => <LimitField id="ai-message-limit" value={field.value} onChange={field.onChange} disabled={disabled} />}
               />
             </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>AI feature controls</CardTitle>
+            <CardDescription>Enable or disable individual AI capabilities for this organization.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ToggleField control={control} name="imageReadEnabled" label="Image reading" description="AI can read and analyze images sent by customers." disabled={disabled} />
+            <ToggleField control={control} name="voiceEnabled" label="Voice messages" description="AI can process and respond to voice messages." disabled={disabled} />
+            <ToggleField control={control} name="commentReplyEnabled" label="Comment replies" description="AI can reply to Facebook/Instagram comments." disabled={disabled} />
+            <ToggleField control={control} name="linkReadEnabled" label="Link reading" description="AI can read and preview links shared by customers." disabled={disabled} />
+            <ToggleField control={control} name="followUpEnabled" label="Follow-up messages" description="AI sends a follow-up when the customer reads but does not reply." disabled={disabled} />
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
+              <div className="min-w-0 space-y-1">
+                <p className="text-sm font-medium text-foreground">Follow-up delay</p>
+                <p className="text-xs text-muted-foreground">Minutes to wait before sending a follow-up (1–1440).</p>
+              </div>
+              <Controller
+                control={control}
+                name="followUpDelayMinutes"
+                render={({ field }) => (
+                  <Input
+                    type="number"
+                    min={1}
+                    max={1440}
+                    className="w-24"
+                    disabled={disabled}
+                    value={field.value}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
+                )}
+              />
+            </div>
+            {formState.errors.followUpDelayMinutes && (
+              <p className="text-xs text-destructive">{formState.errors.followUpDelayMinutes.message}</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -221,7 +271,7 @@ function ToggleField({
   badge,
 }: {
   control: ReturnType<typeof useForm<AiConfigurationFormValues>>['control'];
-  name: 'aiEnabled' | 'aiBotEnabled' | 'humanHandoverEnabled';
+  name: 'aiEnabled' | 'aiBotEnabled' | 'humanHandoverEnabled' | 'imageReadEnabled' | 'voiceEnabled' | 'commentReplyEnabled' | 'linkReadEnabled' | 'followUpEnabled';
   label: string;
   description: string;
   disabled: boolean;

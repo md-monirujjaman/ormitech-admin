@@ -45,6 +45,12 @@ export const aiConfigurationSchema = z.object({
   messageLimit: limitValueSchema,
   model: z.string().nullable(),
   systemPrompt: z.string().max(4000, 'System prompt is limited to 4000 characters'),
+  imageReadEnabled: z.boolean(),
+  voiceEnabled: z.boolean(),
+  commentReplyEnabled: z.boolean(),
+  followUpEnabled: z.boolean(),
+  followUpDelayMinutes: z.number().int().min(1).max(1440),
+  linkReadEnabled: z.boolean(),
 });
 
 export type AiConfigurationFormValues = z.infer<typeof aiConfigurationSchema>;
