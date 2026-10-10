@@ -31,6 +31,8 @@ interface ApiOrganizationListItem {
   status: string;
   plan: string;
   memberCount: number;
+  aiEnabled: boolean;
+  handoverEnabled: boolean;
   createdAt: string;
 }
 
@@ -92,9 +94,9 @@ function fromApi(row: ApiOrganizationListItem | ApiOrganizationDetail, owner?: A
     // looked like data would be read as the customer's actual configuration.
     overrides: { features: {}, channels: {}, limits: {} },
     ai: {
-      aiEnabled: false,
-      aiBotEnabled: false,
-      humanHandoverEnabled: false,
+      aiEnabled: 'aiEnabled' in row ? row.aiEnabled : false,
+      aiBotEnabled: 'aiEnabled' in row ? row.aiEnabled : false,
+      humanHandoverEnabled: 'handoverEnabled' in row ? row.handoverEnabled : false,
       conversationLimit: DISABLED,
       messageLimit: DISABLED,
       model: null,
