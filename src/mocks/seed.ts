@@ -181,6 +181,12 @@ function aiConfig(overrides: Partial<AiConfiguration> = {}): AiConfiguration {
     model: null,
     systemPrompt: '',
     knowledgeSources: [],
+    imageReadEnabled: false,
+    voiceEnabled: false,
+    commentReplyEnabled: false,
+    followUpEnabled: true,
+    followUpDelayMinutes: 15,
+    linkReadEnabled: false,
     updatedAt: now,
     ...overrides,
   };
