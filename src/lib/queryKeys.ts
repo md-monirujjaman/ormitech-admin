@@ -21,6 +21,10 @@ export const queryKeys = {
     list: (params: AdminListParams) => ['admins', 'list', params] as const,
     roles: ['admins', 'roles'] as const,
   },
+  auditLogs: {
+    all: ['audit-logs'] as const,
+    list: (params: unknown) => ['audit-logs', 'list', params] as const,
+  },
   leads: {
     all: ['leads'] as const,
     list: (params: unknown) => ['leads', 'list', params] as const,

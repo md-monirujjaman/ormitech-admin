@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Activity, BarChart3 } from 'lucide-react';
 import { dashboardApi } from '@/api/dashboardApi';
+import { RecentActivity } from '@/features/audit-logs/components/RecentActivity';
 import { isMockDataSource } from '@/api/dataSource';
 import { MockDataNotice } from '@/components/shared/MockDataNotice';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
@@ -143,18 +144,13 @@ export default function Overview() {
         <Card>
           <CardHeader>
             <CardTitle>Recent activity</CardTitle>
-            <CardDescription>Latest events across the platform.</CardDescription>
+            <CardDescription>
+              {isMockDataSource ? 'Latest events across the platform.' : 'What administrators did, newest first.'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {isMockDataSource ? (
-              <ActivityFeed />
-            ) : (
-              <EmptyState
-                icon={Activity}
-                title="No activity feed yet"
-                description="Platform events are not recorded for this view. Administrator actions are in the audit log."
-              />
-            )}
+            {/* The audit trail is the one activity the platform records; nothing stores customer-side events. */}
+            {isMockDataSource ? <ActivityFeed /> : <RecentActivity />}
           </CardContent>
         </Card>
 

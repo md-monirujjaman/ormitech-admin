@@ -31,6 +31,8 @@ const LeadsPage = lazy(() => import('@/features/leads/pages/LeadsPage'));
 const LeadDetailPage = lazy(() => import('@/features/leads/pages/LeadDetailPage'));
 const ConversationsPage = lazy(() => import('@/features/conversations/pages/ConversationsPage'));
 const ConversationDetailPage = lazy(() => import('@/features/conversations/pages/ConversationDetailPage'));
+const AuditLogsPage = lazy(() => import('@/features/audit-logs/pages/AuditLogsPage'));
+const RolesPage = lazy(() => import('@/features/roles/pages/RolesPage'));
 
 /** Routes with a real page — everything else in NAV_SECTIONS renders <ComingSoon> instead. */
 const IMPLEMENTED_ROUTES = new Set<string>([
@@ -49,6 +51,8 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.adminUsers,
   ROUTES.leads,
   ROUTES.conversations,
+  ROUTES.auditLogs,
+  ROUTES.roles,
 ]);
 
 const comingSoonItems = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !IMPLEMENTED_ROUTES.has(item.href));
@@ -91,6 +95,28 @@ export function AppRoutes() {
               <AdminRoute permission="admin_users.read">
                 <Lazy label="Loading administrators…">
                   <AdminsPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.roles}
+            element={
+              <AdminRoute permission="roles.read">
+                <Lazy label="Loading roles…">
+                  <RolesPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.auditLogs}
+            element={
+              <AdminRoute permission="audit.read">
+                <Lazy label="Loading audit logs…">
+                  <AuditLogsPage />
                 </Lazy>
               </AdminRoute>
             }
