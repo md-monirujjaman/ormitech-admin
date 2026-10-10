@@ -30,7 +30,7 @@ export default function PaymentsPage() {
   const [page, setPage] = useState(1);
 
   const paymentsQuery = usePayments({ query, status, page, pageSize: PAGE_SIZE });
-  const organizationsQuery = useOrganizations({ page: 1, pageSize: 200 });
+  const organizationsQuery = useOrganizations({ page: 1, pageSize: 100 });
 
   const organizations = organizationsQuery.data?.items ?? [];
   const organizationName = (id: string) => organizations.find((organization) => organization.id === id)?.name ?? id;

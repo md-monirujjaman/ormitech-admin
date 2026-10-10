@@ -38,7 +38,7 @@ export default function SubscriptionsPage() {
 
   const subscriptionsQuery = useSubscriptions({ query, status, planId, page, pageSize: PAGE_SIZE });
   const plansQuery = usePlans();
-  const organizationsQuery = useOrganizations({ page: 1, pageSize: 200 });
+  const organizationsQuery = useOrganizations({ page: 1, pageSize: 100 });
   const setStatusMutation = useSetSubscriptionStatus();
 
   const [viewing, setViewing] = useState<Subscription | null>(null);

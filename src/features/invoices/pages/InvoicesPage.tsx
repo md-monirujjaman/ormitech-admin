@@ -31,7 +31,7 @@ export default function InvoicesPage() {
   const [page, setPage] = useState(1);
 
   const invoicesQuery = useInvoices({ query, status, page, pageSize: PAGE_SIZE });
-  const organizationsQuery = useOrganizations({ page: 1, pageSize: 200 });
+  const organizationsQuery = useOrganizations({ page: 1, pageSize: 100 });
   const voidInvoice = useVoidInvoice();
 
   const [viewing, setViewing] = useState<Invoice | null>(null);

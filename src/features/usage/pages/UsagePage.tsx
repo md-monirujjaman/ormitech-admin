@@ -26,7 +26,7 @@ const COLUMN_KEYS: LimitKey[] = ['monthly_messages', 'ai_conversations', 'ai_mes
 
 export default function UsagePage() {
   const usageQuery = usePlatformUsage();
-  const organizationsQuery = useOrganizations({ page: 1, pageSize: 200 });
+  const organizationsQuery = useOrganizations({ page: 1, pageSize: 100 });
   const plansQuery = usePlans();
   const { catalog, isLoading: catalogLoading } = useCatalog();
 

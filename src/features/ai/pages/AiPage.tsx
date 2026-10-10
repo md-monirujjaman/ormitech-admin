@@ -12,7 +12,7 @@ import { usePlans } from '@/features/plans/hooks';
 import { ROUTES } from '@/lib/constants';
 import { formatLimit, resolveEntitlements } from '@/lib/entitlements';
 
-const SUMMARY_PAGE_SIZE = 200;
+const SUMMARY_PAGE_SIZE = 100;
 
 /**
  * Platform-wide AI configuration overview. Per-organization settings (model, prompt, knowledge sources, limits)

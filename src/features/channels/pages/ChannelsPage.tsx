@@ -11,7 +11,7 @@ import { resolveEntitlements } from '@/lib/entitlements';
 import type { ChannelConnectionStatus } from '@/types/catalog';
 
 /** One page of organizations is enough to summarize entitlement across the platform without a request per tenant. */
-const SUMMARY_PAGE_SIZE = 200;
+const SUMMARY_PAGE_SIZE = 100;
 
 const CONNECTION_LABEL: Record<ChannelConnectionStatus, string> = {
   connected: 'Connected',
