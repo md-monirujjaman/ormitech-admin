@@ -4,6 +4,8 @@ export const env = {
   clientUrl: import.meta.env.VITE_CLIENT_URL ?? 'https://app.ormitechit.com',
   docsUrl: import.meta.env.VITE_DOCS_URL ?? 'https://docs.ormitechit.com',
   webUrl: import.meta.env.VITE_WEB_URL ?? 'https://www.ormitechit.com',
+  /** Cloudflare Turnstile site key (public by design). Required: sign-in stays disabled without it. */
+  turnstileSiteKey: (import.meta.env.VITE_CLOUDFLARE_TURNSTILE_SITE_KEY as string | undefined) ?? '',
 } as const;
 
 /**

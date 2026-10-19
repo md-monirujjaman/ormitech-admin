@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AuthCard } from '@/features/auth/components/AuthCard';
+import { TurnstileWidget, type TurnstileHandle } from '@/features/auth/components/TurnstileWidget';
 import { loginSchema, type LoginFormValues } from '@/features/auth/authTypes';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/lib/constants';
@@ -20,11 +22,19 @@ export default function AdminLogin() {
     formState: { errors },
   } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
 
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const turnstileRef = useRef<TurnstileHandle>(null);
+
+  // A Turnstile token works once, so a failed attempt needs a fresh check.
+  useEffect(() => {
+    if (loginError) turnstileRef.current?.reset();
+  }, [loginError]);
+
   const redirectTo = (location.state as { from?: string } | null)?.from ?? ROUTES.dashboard;
 
   async function onSubmit(values: LoginFormValues) {
     try {
-      await login(values);
+      await login({ ...values, turnstileToken });
       navigate(redirectTo, { replace: true });
     } catch {
       // Surfaced below via `loginError` — swallow here so react-hook-form doesn't also log an unhandled rejection.
@@ -57,13 +67,15 @@ export default function AdminLogin() {
           {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
         </div>
 
+        <TurnstileWidget ref={turnstileRef} onToken={setTurnstileToken} />
+
         {loginError && (
           <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
             Couldn't sign in. Check your credentials, or the OrmiTech API may be unreachable.
           </p>
         )}
 
-        <Button type="submit" className="w-full" disabled={isLoggingIn}>
+        <Button type="submit" className="w-full" disabled={isLoggingIn || !turnstileToken}>
           {isLoggingIn ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>
