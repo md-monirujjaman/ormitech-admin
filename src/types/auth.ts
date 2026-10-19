@@ -129,6 +129,7 @@ export interface ChangePasswordInput {
 export interface LoginCredentials {
   email: string;
   password: string;
+  turnstileToken?: string;
 }
 
 export interface ForgotPasswordRequest {
