@@ -39,6 +39,7 @@ export const ROUTES = {
   payments: '/payments',
   invoices: '/invoices',
   usage: '/usage',
+  storage: '/storage',
 
   docs: '/docs',
   announcements: '/announcements',

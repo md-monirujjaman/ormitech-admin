@@ -28,6 +28,7 @@ export type Permission =
   | 'invoices.read'
   | 'invoices.write'
   | 'usage.read'
+  | 'storage.read'
   | 'docs.read'
   | 'docs.write'
   | 'announcements.read'

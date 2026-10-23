@@ -25,6 +25,7 @@ const SubscriptionsPage = lazy(() => import('@/features/subscriptions/pages/Subs
 const PaymentsPage = lazy(() => import('@/features/payments/pages/PaymentsPage'));
 const InvoicesPage = lazy(() => import('@/features/invoices/pages/InvoicesPage'));
 const UsagePage = lazy(() => import('@/features/usage/pages/UsagePage'));
+const StoragePage = lazy(() => import('@/features/storage/pages/StoragePage'));
 const AdminsPage = lazy(() => import('@/features/admins/pages/AdminsPage'));
 const ProfilePage = lazy(() => import('@/features/profile/pages/ProfilePage'));
 const LeadsPage = lazy(() => import('@/features/leads/pages/LeadsPage'));
@@ -48,6 +49,7 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.payments,
   ROUTES.invoices,
   ROUTES.usage,
+  ROUTES.storage,
   ROUTES.adminUsers,
   ROUTES.leads,
   ROUTES.conversations,
@@ -268,6 +270,17 @@ export function AppRoutes() {
               <AdminRoute permission="invoices.read">
                 <Lazy label="Loading invoices…">
                   <InvoicesPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.storage}
+            element={
+              <AdminRoute permission="storage.read">
+                <Lazy label="Loading storage…">
+                  <StoragePage />
                 </Lazy>
               </AdminRoute>
             }
