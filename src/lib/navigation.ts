@@ -7,6 +7,7 @@ import {
   Building2,
   CreditCard,
   Flag,
+  HardDrive,
   KeyRound,
   LayoutDashboard,
   LifeBuoy,
@@ -64,6 +65,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Payments', href: ROUTES.payments, icon: Wallet, permission: 'payments.read' },
       { label: 'Invoices', href: ROUTES.invoices, icon: Receipt, permission: 'invoices.read' },
       { label: 'Usage', href: ROUTES.usage, icon: Target, permission: 'usage.read' },
+      { label: 'Storage', href: ROUTES.storage, icon: HardDrive, permission: 'storage.read' },
     ],
   },
   {

@@ -14,6 +14,7 @@ const ALL_PERMISSIONS: Permission[] = [
   'payments.read', 'payments.write',
   'invoices.read', 'invoices.write',
   'usage.read',
+  'storage.read',
   'docs.read', 'docs.write',
   'announcements.read', 'announcements.write',
   'api.read', 'api.write',
@@ -50,7 +51,7 @@ export const ROLE_DEFINITIONS: Role[] = [
     name: 'ADMIN',
     label: 'Admin',
     description: 'Full operational access; cannot manage other admin accounts or roles.',
-    permissions: ALL_PERMISSIONS.filter((p) => p !== 'admin_users.write' && p !== 'roles.write'),
+    permissions: ALL_PERMISSIONS.filter((p) => p !== 'admin_users.write' && p !== 'roles.write' && p !== 'storage.read'),
   },
   {
     name: 'SUPPORT_ADMIN',
