@@ -33,6 +33,7 @@ const LeadDetailPage = lazy(() => import('@/features/leads/pages/LeadDetailPage'
 const ConversationsPage = lazy(() => import('@/features/conversations/pages/ConversationsPage'));
 const ConversationDetailPage = lazy(() => import('@/features/conversations/pages/ConversationDetailPage'));
 const AuditLogsPage = lazy(() => import('@/features/audit-logs/pages/AuditLogsPage'));
+const DocsPage = lazy(() => import('@/features/docs/pages/DocsPage'));
 const RolesPage = lazy(() => import('@/features/roles/pages/RolesPage'));
 
 /** Routes with a real page — everything else in NAV_SECTIONS renders <ComingSoon> instead. */
@@ -55,6 +56,7 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.conversations,
   ROUTES.auditLogs,
   ROUTES.roles,
+  ROUTES.docs,
 ]);
 
 const comingSoonItems = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !IMPLEMENTED_ROUTES.has(item.href));
@@ -270,6 +272,17 @@ export function AppRoutes() {
               <AdminRoute permission="invoices.read">
                 <Lazy label="Loading invoices…">
                   <InvoicesPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.docs}
+            element={
+              <AdminRoute permission="docs.read">
+                <Lazy label="Loading documentation…">
+                  <DocsPage />
                 </Lazy>
               </AdminRoute>
             }
