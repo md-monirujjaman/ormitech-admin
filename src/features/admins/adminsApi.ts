@@ -31,4 +31,6 @@ export const adminsApi = {
   create: (input: CreateAdminInput) => unwrap<AdminAccount>(axiosClient.post('/admin/admins', input)),
 
   update: (id: string, input: UpdateAdminInput) => unwrap<AdminAccount>(axiosClient.patch(`/admin/admins/${id}`, input)),
+
+  remove: (id: string) => unwrap<AdminAccount>(axiosClient.delete(`/admin/admins/${id}`)),
 };

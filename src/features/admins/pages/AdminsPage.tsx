@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, ShieldCheck, UserCog } from 'lucide-react';
+import { Plus, Search, ShieldCheck, Trash2, UserCog } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Pagination } from '@/components/shared/Pagination';
@@ -17,7 +17,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { apiErrorMessage } from '@/lib/apiError';
 import type { AdminAccount } from '@/types/auth';
 import { AdminFormDialog } from '../components/AdminFormDialog';
-import { useAdmins, useCreateAdmin, useUpdateAdmin } from '../hooks';
+import { useAdmins, useCreateAdmin, useDeleteAdmin, useUpdateAdmin } from '../hooks';
 import { CONTENT_ADMIN_ROLE, SUPER_ADMIN_ROLE } from '../roles';
 
 const PAGE_SIZE = 20;
@@ -37,7 +37,7 @@ type PendingChange =
  * role. This screen hides what it cannot use and says what the API said when it refuses anyway — the UI is
  * not the boundary.
  *
- * There is no delete. An administrator is disabled, which keeps their audit entries attributable.
+ * An administrator can be disabled (reversible) or deleted. The audit trail keeps what they did either way.
  */
 export default function AdminsPage() {
   const { admin: currentAdmin } = useAuth();
@@ -49,6 +49,7 @@ export default function AdminsPage() {
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [pending, setPending] = useState<PendingChange | null>(null);
+  const [deleting, setDeleting] = useState<AdminAccount | null>(null);
 
   const adminsQuery = useAdmins({
     search: search.trim() || undefined,
@@ -58,6 +59,7 @@ export default function AdminsPage() {
   });
   const createAdmin = useCreateAdmin();
   const updateAdmin = useUpdateAdmin();
+  const deleteAdmin = useDeleteAdmin();
 
   const data = adminsQuery.data;
   const admins = data?.items ?? [];
@@ -87,6 +89,16 @@ export default function AdminsPage() {
     try {
       await updateAdmin.mutateAsync({ id: pending.admin.id, input });
       setPending(null);
+    } catch {
+      // Left open, with the API's reason shown inside the dialog.
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    try {
+      await deleteAdmin.mutateAsync(deleting.id);
+      setDeleting(null);
     } catch {
       // Left open, with the API's reason shown inside the dialog.
     }
@@ -234,6 +246,19 @@ export default function AdminsPage() {
                           >
                             {row.status === 'active' ? 'Disable' : 'Enable'}
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            disabled={isSelf}
+                            onClick={() => {
+                              deleteAdmin.reset();
+                              setDeleting(row);
+                            }}
+                          >
+                            <Trash2 className="size-4" aria-hidden />
+                            Delete
+                          </Button>
                         </div>
                       </TableCell>
                     )}
@@ -274,6 +299,29 @@ export default function AdminsPage() {
         {updateAdmin.error && (
           <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
             {apiErrorMessage(updateAdmin.error, 'The OrmiTech API refused the change.')}
+          </p>
+        )}
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(null);
+        }}
+        title="Delete administrator"
+        description={
+          deleting
+            ? `${deleting.name} (${deleting.email}) will be deleted and can no longer sign in. This cannot be undone. Their past actions stay in the audit log.`
+            : ''
+        }
+        confirmLabel="Delete"
+        destructive
+        isPending={deleteAdmin.isPending}
+        onConfirm={confirmDelete}
+      >
+        {deleteAdmin.error && (
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {apiErrorMessage(deleteAdmin.error, 'The OrmiTech API refused the deletion.')}
           </p>
         )}
       </ConfirmDialog>
