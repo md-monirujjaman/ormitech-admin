@@ -12,10 +12,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { apiErrorMessage } from '@/lib/apiError';
 import type { CreateAdminInput } from '@/types/auth';
-import { SUPER_ADMIN_ROLE } from '../roles';
+import { CONTENT_ADMIN_ROLE, SUPER_ADMIN_ROLE } from '../roles';
 
 const schema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address'),
@@ -27,7 +27,7 @@ const schema = z.object({
     .regex(/[a-z]/, 'Include a lowercase letter')
     .regex(/[A-Z]/, 'Include an uppercase letter')
     .regex(/\d/, 'Include a number'),
-  superAdmin: z.boolean(),
+  access: z.enum(['admin', 'content', 'super']),
 });
 
 type Values = z.infer<typeof schema>;
@@ -61,10 +61,10 @@ export function AdminFormDialog({
     formState: { errors },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', name: '', password: '', superAdmin: false },
+    defaultValues: { email: '', name: '', password: '', access: 'admin' },
   });
 
-  const superAdmin = watch('superAdmin');
+  const access = watch('access');
 
   async function submit(values: Values) {
     try {
@@ -72,7 +72,7 @@ export function AdminFormDialog({
         email: values.email,
         name: values.name,
         password: values.password,
-        roles: values.superAdmin ? [SUPER_ADMIN_ROLE] : [],
+        roles: values.access === 'super' ? [SUPER_ADMIN_ROLE] : values.access === 'content' ? [CONTENT_ADMIN_ROLE] : [],
       });
       reset();
       onOpenChange(false);
@@ -122,20 +122,25 @@ export function AdminFormDialog({
             )}
           </div>
 
-          <div className="flex items-start justify-between gap-4 rounded-md border border-border px-3 py-2.5">
-            <div className="min-w-0">
-              <Label htmlFor="admin-super" className="text-sm">
-                Super admin
-              </Label>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Can create, disable and re-role other administrators. Grant it sparingly.
-              </p>
-            </div>
-            <Switch
-              id="admin-super"
-              checked={superAdmin}
-              onCheckedChange={(checked) => setValue('superAdmin', checked)}
-            />
+          <div className="space-y-1.5">
+            <Label>Access</Label>
+            <Select value={access} onValueChange={(value) => setValue('access', value as Values['access'])}>
+              <SelectTrigger aria-label="Access">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Admin: signs in, no administrator management</SelectItem>
+                <SelectItem value="content">Content admin: writes the documentation</SelectItem>
+                <SelectItem value="super">Super admin: manages other administrators</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {access === 'super'
+                ? 'Can create, disable and re-role other administrators. Grant it sparingly.'
+                : access === 'content'
+                  ? 'Sees the Documentation screen and can write and publish pages. Nothing else.'
+                  : 'Can sign in. Cannot manage administrators or write the documentation.'}
+            </p>
           </div>
 
           {Boolean(error) && (

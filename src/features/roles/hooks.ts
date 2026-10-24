@@ -11,7 +11,7 @@ import type { Permission, RoleName } from '@/types/auth';
  * permission except administrator and role management. Keeping the mapping in step with that file is the
  * whole job here — if the API ever enforces a second role, both change together.
  */
-export const toUiRole = (name: string): RoleName => (name === 'super_admin' ? 'SUPER_ADMIN' : 'ADMIN');
+export const toUiRole = (name: string): RoleName => (name === 'super_admin' ? 'SUPER_ADMIN' : name === 'content_admin' ? 'CONTENT_ADMIN' : 'ADMIN');
 
 /**
  * What ormitech-api actually refuses without the role, as opposed to what the panel merely hides.
@@ -29,7 +29,7 @@ export const ENFORCED_BY_API: Record<RoleName, string[]> = {
   ADMIN: [],
   SUPPORT_ADMIN: [],
   BILLING_ADMIN: [],
-  CONTENT_ADMIN: [],
+  CONTENT_ADMIN: ['Write and publish the public documentation (/admin/docs)'],
   ANALYTICS_ADMIN: [],
 };
 

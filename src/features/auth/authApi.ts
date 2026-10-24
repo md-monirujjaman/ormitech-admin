@@ -36,7 +36,10 @@ interface AdminLoginResponse {
  * honest as long as the API's rule stays one role.
  */
 function toUiRoles(roles: string[]): RoleName[] {
-  return roles.includes('super_admin') ? ['SUPER_ADMIN'] : ['ADMIN'];
+  if (roles.includes('super_admin')) return ['SUPER_ADMIN'];
+  // The documentation role sees the documentation screen and little else (its permissions are in lib/permissions.ts).
+  if (roles.includes('content_admin')) return ['CONTENT_ADMIN'];
+  return ['ADMIN'];
 }
 
 export function toAdminUser(profile: AdminApiProfile): AdminUser {
