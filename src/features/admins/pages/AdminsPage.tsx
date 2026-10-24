@@ -18,7 +18,7 @@ import { apiErrorMessage } from '@/lib/apiError';
 import type { AdminAccount } from '@/types/auth';
 import { AdminFormDialog } from '../components/AdminFormDialog';
 import { useAdmins, useCreateAdmin, useUpdateAdmin } from '../hooks';
-import { SUPER_ADMIN_ROLE } from '../roles';
+import { CONTENT_ADMIN_ROLE, SUPER_ADMIN_ROLE } from '../roles';
 
 const PAGE_SIZE = 20;
 
@@ -27,7 +27,7 @@ const formatDate = (value?: string | null) =>
 
 type PendingChange =
   | { kind: 'status'; admin: AdminAccount; status: 'active' | 'disabled' }
-  | { kind: 'role'; admin: AdminAccount; superAdmin: boolean };
+  | { kind: 'role'; admin: AdminAccount; roles: string[] };
 
 /**
  * Who can sign in to this panel.
@@ -72,16 +72,18 @@ export default function AdminsPage() {
       ? change.status === 'disabled'
         ? `${change.admin.name} will be signed out and refused at sign-in until re-enabled.`
         : `${change.admin.name} will be able to sign in again.`
-      : change.superAdmin
+      : change.roles.includes(SUPER_ADMIN_ROLE)
         ? `${change.admin.name} will be able to create, disable and re-role administrators — including you.`
-        : `${change.admin.name} will keep their access to the panel but lose administrator management.`;
+        : change.roles.includes(CONTENT_ADMIN_ROLE)
+          ? `${change.admin.name} will be able to write and publish the documentation, and nothing else.`
+          : `${change.admin.name} will keep their access to the panel but lose administrator management and the documentation.`;
 
   const applyChange = async () => {
     if (!pending) return;
     const input =
       pending.kind === 'status'
         ? { status: pending.status }
-        : { roles: pending.superAdmin ? [SUPER_ADMIN_ROLE] : [] };
+        : { roles: pending.roles };
     try {
       await updateAdmin.mutateAsync({ id: pending.admin.id, input });
       setPending(null);
@@ -164,6 +166,7 @@ export default function AdminsPage() {
             <TableBody>
               {admins.map((row) => {
                 const isSuper = row.roles.includes(SUPER_ADMIN_ROLE);
+                const isContent = row.roles.includes(CONTENT_ADMIN_ROLE);
                 const isSelf = row.id === currentAdmin?.id;
 
                 return (
@@ -183,6 +186,8 @@ export default function AdminsPage() {
                           <ShieldCheck className="size-3" aria-hidden />
                           Super admin
                         </Badge>
+                      ) : isContent ? (
+                        <Badge variant="outline">Content admin</Badge>
                       ) : (
                         <Badge variant="secondary">Admin</Badge>
                       )}
@@ -202,10 +207,19 @@ export default function AdminsPage() {
                             // Refused by the API for your own account as well; hidden here so the obvious
                             // lockout is not offered in the first place.
                             disabled={isSelf}
-                            onClick={() => setPending({ kind: 'role', admin: row, superAdmin: !isSuper })}
+                            onClick={() => setPending({ kind: 'role', admin: row, roles: isSuper ? [] : [SUPER_ADMIN_ROLE] })}
                           >
                             {isSuper ? 'Remove super admin' : 'Make super admin'}
                           </Button>
+                          {!isSuper && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPending({ kind: 'role', admin: row, roles: isContent ? [] : [CONTENT_ADMIN_ROLE] })}
+                            >
+                              {isContent ? 'Remove content admin' : 'Make content admin'}
+                            </Button>
+                          )}
                           <Button
                             variant={row.status === 'active' ? 'outline' : 'default'}
                             size="sm"

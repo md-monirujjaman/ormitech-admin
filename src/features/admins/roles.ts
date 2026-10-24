@@ -5,3 +5,9 @@
  * does not know is refused with 400 rather than created.
  */
 export const SUPER_ADMIN_ROLE = 'super_admin';
+
+/**
+ * The role that may write the documentation (`/admin/docs`) and nothing else beyond signing in. Seeded by
+ * `ormitech-api` migration 0030.
+ */
+export const CONTENT_ADMIN_ROLE = 'content_admin';
