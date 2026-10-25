@@ -138,3 +138,94 @@
     font-feature-settings: "cv11", "ss01";
   }
 }
+
+/* The visual (TipTap) documentation editor: typography for the text being written. */
+.rte {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  outline: none;
+}
+.rte > * + * {
+  margin-top: 0.75rem;
+}
+.rte h2 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.75rem;
+}
+.rte h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 1.5rem;
+}
+.rte h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+}
+.rte ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.rte ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+.rte li > p {
+  margin: 0;
+}
+.rte li + li {
+  margin-top: 0.25rem;
+}
+.rte blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+.rte code {
+  background: var(--muted);
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.35rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+}
+.rte pre {
+  background: var(--muted);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+}
+.rte pre code {
+  background: none;
+  padding: 0;
+}
+.rte a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rte img {
+  max-width: 100%;
+  max-height: 24rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+.rte img.ProseMirror-selectednode {
+  outline: 2px solid var(--primary);
+}
+.rte hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+.rte p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
