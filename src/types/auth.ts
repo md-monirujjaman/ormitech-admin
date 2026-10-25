@@ -31,6 +31,8 @@ export type Permission =
   | 'storage.read'
   | 'docs.read'
   | 'docs.write'
+  | 'pricing.read'
+  | 'pricing.write'
   | 'announcements.read'
   | 'announcements.write'
   | 'api.read'
