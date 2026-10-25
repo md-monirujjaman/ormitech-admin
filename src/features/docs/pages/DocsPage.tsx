@@ -1,4 +1,4 @@
-import { BookOpen, FilePlus, FolderPlus } from 'lucide-react';
+import { BookOpen, ChevronDown, FilePlus, FolderPlus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -17,7 +17,6 @@ import {
   useCreateSection,
   useDeletePage,
   useDeleteSection,
-  useDocIcons,
   useDocPage,
   useDocsTree,
   useReorderDocs,
@@ -66,9 +65,9 @@ export default function DocsPage() {
   const canWrite = can('docs.write');
 
   const tree = useDocsTree();
-  const icons = useDocIcons();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [treeOpen, setTreeOpen] = useState(true);
   const page = useDocPage(selectedId);
 
   const createSection = useCreateSection();
@@ -85,13 +84,14 @@ export default function DocsPage() {
 
   const sections = useMemo(() => tree.data ?? [], [tree.data]);
   const flat = useMemo(() => flatten(sections), [sections]);
-  const iconNames = icons.data ?? [];
 
   const select = (id: string) => {
     if (id === selectedId) return;
     if (dirty && !window.confirm('You have unsaved changes on this page. Leave without saving?')) return;
     setDirty(false);
     setSelectedId(id);
+    // The tree gets out of the way once a page is open, so the editor has the room.
+    setTreeOpen(false);
   };
 
   const pageGone = selectedId !== null && tree.data !== undefined && findPage(sections, selectedId) === null;
@@ -133,8 +133,19 @@ export default function DocsPage() {
           description={canWrite ? 'Start with a section, such as “Getting started”, then add pages to it.' : 'Nothing has been written yet.'}
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
-          <Card className="h-fit p-3">
+        <div className="space-y-4">
+          <Card className="p-3">
+            <button
+              type="button"
+              className="mb-2 flex w-full items-center justify-between text-left text-sm font-medium"
+              aria-expanded={treeOpen}
+              onClick={() => setTreeOpen(!treeOpen)}
+            >
+              <span>Sections and pages</span>
+              <ChevronDown className={`size-4 transition-transform ${treeOpen ? '' : '-rotate-90'}`} aria-hidden />
+            </button>
+            {treeOpen && (
+              <div className="max-h-72 overflow-y-auto">
             <DocsTree
               sections={sections}
               actions={{
@@ -159,6 +170,8 @@ export default function DocsPage() {
                 },
               }}
             />
+              </div>
+            )}
             {reorder.error != null && <p className="mt-2 text-xs text-destructive">{apiErrorMessage(reorder.error, 'The order could not be saved.')}</p>}
           </Card>
 
@@ -180,7 +193,6 @@ export default function DocsPage() {
                 key={page.data.id}
                 page={page.data}
                 canWrite={canWrite}
-                icons={iconNames}
                 sections={flat}
                 onDirtyChange={setDirty}
                 onSaved={() => undefined}
@@ -208,7 +220,6 @@ export default function DocsPage() {
         initial={sectionDialog?.initial ?? EMPTY_SECTION}
         editing={sectionDialog?.editing != null}
         topLevelSections={sections.filter((section) => section.id !== sectionDialog?.editing?.id)}
-        icons={iconNames}
         isPending={createSection.isPending || updateSection.isPending}
         error={createSection.error ?? updateSection.error}
         onSubmit={async (values) => {

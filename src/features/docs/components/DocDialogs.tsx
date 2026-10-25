@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { IconField } from './IconField';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -8,24 +9,6 @@ import { apiErrorMessage } from '@/lib/apiError';
 import type { DocSectionNode, DocStatus } from '../types';
 
 const NONE = '__none__';
-
-export function IconSelect({ value, onChange, icons }: { value: string | null; onChange: (value: string | null) => void; icons: string[] }) {
-  return (
-    <Select value={value ?? NONE} onValueChange={(next) => onChange(next === NONE ? null : next)}>
-      <SelectTrigger>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value={NONE}>No icon</SelectItem>
-        {icons.map((icon) => (
-          <SelectItem key={icon} value={icon}>
-            {icon}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
 
 export interface SectionFormValues {
   title: string;
@@ -42,7 +25,6 @@ export function SectionDialog({
   initial,
   editing,
   topLevelSections,
-  icons,
   isPending,
   error,
   onSubmit,
@@ -53,7 +35,6 @@ export function SectionDialog({
   editing: boolean;
   /** Where a section may be placed: the top-level sections, minus the one being edited. */
   topLevelSections: DocSectionNode[];
-  icons: string[];
   isPending: boolean;
   error: unknown;
   onSubmit: (values: SectionFormValues) => void;
@@ -94,7 +75,7 @@ export function SectionDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Icon</Label>
-              <IconSelect value={values.icon} icons={icons} onChange={(icon) => setValues({ ...values, icon })} />
+              <IconField value={values.icon} onChange={(icon) => setValues({ ...values, icon })} />
             </div>
             <div className="space-y-1.5">
               <Label>Place</Label>
