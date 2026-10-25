@@ -33,6 +33,7 @@ const LeadDetailPage = lazy(() => import('@/features/leads/pages/LeadDetailPage'
 const ConversationsPage = lazy(() => import('@/features/conversations/pages/ConversationsPage'));
 const ConversationDetailPage = lazy(() => import('@/features/conversations/pages/ConversationDetailPage'));
 const AuditLogsPage = lazy(() => import('@/features/audit-logs/pages/AuditLogsPage'));
+const PricingPage = lazy(() => import('@/features/pricing/pages/PricingPage'));
 const DocsPage = lazy(() => import('@/features/docs/pages/DocsPage'));
 const RolesPage = lazy(() => import('@/features/roles/pages/RolesPage'));
 
@@ -57,6 +58,7 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.auditLogs,
   ROUTES.roles,
   ROUTES.docs,
+  ROUTES.pricing,
 ]);
 
 const comingSoonItems = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !IMPLEMENTED_ROUTES.has(item.href));
@@ -283,6 +285,17 @@ export function AppRoutes() {
               <AdminRoute permission="docs.read">
                 <Lazy label="Loading documentation…">
                   <DocsPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.pricing}
+            element={
+              <AdminRoute permission="pricing.read">
+                <Lazy label="Loading pricing…">
+                  <PricingPage />
                 </Lazy>
               </AdminRoute>
             }

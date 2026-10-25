@@ -5,9 +5,9 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
 
 export function AdminLayout() {
-  // The documentation editor uses the full width: the markdown and its live preview sit side by side.
+  // The documentation and pricing editors use the full width: the form and its live preview sit side by side.
   const { pathname } = useLocation();
-  const wide = pathname === ROUTES.docs || pathname.startsWith(`${ROUTES.docs}/`);
+  const wide = [ROUTES.docs, ROUTES.pricing].some((route) => pathname === route || pathname.startsWith(`${route}/`));
   return (
     <div className="flex min-h-svh bg-muted/30">
       <Sidebar />
