@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { apiErrorMessage } from '@/lib/apiError';
 import { env } from '@/lib/constants';
@@ -13,6 +14,7 @@ import { useUpdatePage, useUploadDocImage } from '../hooks';
 import type { DocPage, DocStatus, UpdatePageInput } from '../types';
 import { IconField } from './IconField';
 import { MarkdownPreview } from './MarkdownPreview';
+import { RichTextEditor } from './RichTextEditor';
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -77,6 +79,9 @@ export function PageEditor({
   const upload = useUploadDocImage();
   const [uploadError, setUploadError] = useState<string | null>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
+  // The visual editor reports changes from its own event, so it reads the latest draft through this.
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
   const fileInput = useRef<HTMLInputElement>(null);
 
   const setDraft = (next: Draft) => {
@@ -236,71 +241,94 @@ export function PageEditor({
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="min-w-0 space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>Write</Label>
-          </div>
-          {canWrite && (
-            <div className="flex flex-wrap items-center gap-1">
-              {toolbar.map(({ label, icon: Icon, run }) => (
-                <Button key={label} type="button" variant="ghost" size="icon" className="size-8" aria-label={label} title={label} onClick={run}>
-                  <Icon className="size-4" aria-hidden />
-                </Button>
-              ))}
-              <Button type="button" variant="outline" size="sm" disabled={upload.isPending} onClick={() => fileInput.current?.click()}>
-                <ImagePlus className="size-4" aria-hidden />
-                {upload.isPending ? 'Uploading…' : 'Add picture'}
-              </Button>
-              <input
-                ref={fileInput}
-                type="file"
-                accept={IMAGE_TYPES.join(',')}
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  event.target.value = '';
-                  if (file) void addImage(file);
-                }}
-              />
-            </div>
-          )}
-          <Textarea
-            ref={textarea}
-            value={draft.content}
-            disabled={!canWrite}
-            spellCheck
-            className="h-[34rem] resize-none font-mono text-[13px] font-normal leading-relaxed"
-            placeholder={'Write the page in markdown.\n\n## A heading\nSome text with **bold**, a [link](https://example.com), and a picture added with "Add picture".'}
-            onChange={(e) => setDraft({ ...draft, content: e.target.value })}
-            onPaste={(event) => {
-              const file = Array.from(event.clipboardData.files).find((candidate) => candidate.type.startsWith('image/'));
-              if (file && canWrite) {
-                event.preventDefault();
-                void addImage(file);
-              }
-            }}
-            onDrop={(event) => {
-              const file = Array.from(event.dataTransfer.files).find((candidate) => candidate.type.startsWith('image/'));
-              if (file && canWrite) {
-                event.preventDefault();
-                void addImage(file);
-              }
-            }}
-          />
-          <p className="text-xs text-muted-foreground">You can also paste or drop a picture straight into the text. JPEG, PNG, WebP or GIF, up to 5 MB.</p>
-          {uploadError && <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">{uploadError}</p>}
+      <Tabs defaultValue="visual">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <TabsList className="w-auto">
+            <TabsTrigger value="visual">Visual editor</TabsTrigger>
+            <TabsTrigger value="markdown">Markdown</TabsTrigger>
+          </TabsList>
+          <p className="text-xs text-muted-foreground">Both edit the same page. Switch any time.</p>
         </div>
 
-        <div className="min-w-0 space-y-2">
-          <Label>Live preview</Label>
-          <div className="h-[34rem] overflow-y-auto rounded-md border border-border bg-background p-4 lg:mt-10">
-            {draft.title && <h1 className="mb-1 text-2xl font-semibold text-foreground">{draft.title}</h1>}
-            {draft.description && <p className="mb-4 text-sm text-muted-foreground">{draft.description}</p>}
-            <MarkdownPreview source={draft.content} />
+        <TabsContent value="visual" className="mt-3">
+          <RichTextEditor
+            // Fresh from the page's text each time this tab is shown; after that it reports every change.
+            value={draft.content}
+            canWrite={canWrite}
+            onChange={(content) => setDraft({ ...draftRef.current, content })}
+            onUploadImage={async (file) => (await upload.mutateAsync(file)).url}
+          />
+        </TabsContent>
+
+        <TabsContent value="markdown" className="mt-3">
+      <div className="grid gap-4 lg:grid-cols-2">
+          <div className="min-w-0 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Write</Label>
+            </div>
+            {canWrite && (
+              <div className="flex flex-wrap items-center gap-1">
+                {toolbar.map(({ label, icon: Icon, run }) => (
+                  <Button key={label} type="button" variant="ghost" size="icon" className="size-8" aria-label={label} title={label} onClick={run}>
+                    <Icon className="size-4" aria-hidden />
+                  </Button>
+                ))}
+                <Button type="button" variant="outline" size="sm" disabled={upload.isPending} onClick={() => fileInput.current?.click()}>
+                  <ImagePlus className="size-4" aria-hidden />
+                  {upload.isPending ? 'Uploading…' : 'Add picture'}
+                </Button>
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept={IMAGE_TYPES.join(',')}
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = '';
+                    if (file) void addImage(file);
+                  }}
+                />
+              </div>
+            )}
+            <Textarea
+              ref={textarea}
+              value={draft.content}
+              disabled={!canWrite}
+              spellCheck
+              className="h-[34rem] resize-none font-mono text-[13px] font-normal leading-relaxed"
+              placeholder={'Write the page in markdown.\n\n## A heading\nSome text with **bold**, a [link](https://example.com), and a picture added with "Add picture".'}
+              onChange={(e) => setDraft({ ...draft, content: e.target.value })}
+              onPaste={(event) => {
+                const file = Array.from(event.clipboardData.files).find((candidate) => candidate.type.startsWith('image/'));
+                if (file && canWrite) {
+                  event.preventDefault();
+                  void addImage(file);
+                }
+              }}
+              onDrop={(event) => {
+                const file = Array.from(event.dataTransfer.files).find((candidate) => candidate.type.startsWith('image/'));
+                if (file && canWrite) {
+                  event.preventDefault();
+                  void addImage(file);
+                }
+              }}
+            />
+            <p className="text-xs text-muted-foreground">You can also paste or drop a picture straight into the text. JPEG, PNG, WebP or GIF, up to 5 MB.</p>
+            {uploadError && <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">{uploadError}</p>}
+          </div>
+  
+          <div className="min-w-0 space-y-2">
+            <Label>Live preview</Label>
+            <div className="h-[34rem] overflow-y-auto rounded-md border border-border bg-background p-4 lg:mt-10">
+              {draft.title && <h1 className="mb-1 text-2xl font-semibold text-foreground">{draft.title}</h1>}
+              {draft.description && <p className="mb-4 text-sm text-muted-foreground">{draft.description}</p>}
+              <MarkdownPreview source={draft.content} />
+            </div>
           </div>
         </div>
-      </div>
+  
+        </TabsContent>
+      </Tabs>
 
       {updatePage.error != null && (
         <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">{apiErrorMessage(updatePage.error, 'The OrmiTech API refused the change.')}</p>
