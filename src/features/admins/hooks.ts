@@ -35,3 +35,11 @@ export function useUpdateAdmin() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.admins.all }),
   });
 }
+
+export function useDeleteAdmin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => adminsApi.remove(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.admins.all }),
+  });
+}
