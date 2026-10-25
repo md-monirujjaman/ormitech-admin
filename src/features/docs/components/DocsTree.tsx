@@ -38,7 +38,7 @@ function Section({ section, siblings, depth, actions }: { section: DocSectionNod
   const index = siblings.findIndex((candidate) => candidate.id === section.id);
 
   return (
-    <li>
+    <li className={cn(depth === 0 && 'rounded-lg border border-border/60 p-2')}>
       <div className={cn('group flex items-center gap-1 rounded-md px-1 py-1 hover:bg-muted/60', depth > 0 && 'ml-4')}>
         <button type="button" className="flex min-w-0 flex-1 items-center gap-1 text-left" onClick={() => setOpen(!open)}>
           {open ? <ChevronDown className="size-4 shrink-0" aria-hidden /> : <ChevronRight className="size-4 shrink-0" aria-hidden />}
@@ -111,7 +111,7 @@ function Section({ section, siblings, depth, actions }: { section: DocSectionNod
 
 export function DocsTree({ sections, actions }: { sections: DocSectionNode[]; actions: TreeActions }) {
   return (
-    <ul className="space-y-1">
+    <ul className="grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {sections.map((section) => (
         <Section key={section.id} section={section} siblings={sections} depth={0} actions={actions} />
       ))}

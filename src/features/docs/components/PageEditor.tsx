@@ -11,7 +11,7 @@ import { apiErrorMessage } from '@/lib/apiError';
 import { env } from '@/lib/constants';
 import { useUpdatePage, useUploadDocImage } from '../hooks';
 import type { DocPage, DocStatus, UpdatePageInput } from '../types';
-import { IconSelect } from './DocDialogs';
+import { IconField } from './IconField';
 import { MarkdownPreview } from './MarkdownPreview';
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -58,7 +58,6 @@ function isDirty(page: DocPage, draft: Draft): boolean {
 export function PageEditor({
   page,
   canWrite,
-  icons,
   sections,
   onDelete,
   onDirtyChange,
@@ -66,7 +65,6 @@ export function PageEditor({
 }: {
   page: DocPage;
   canWrite: boolean;
-  icons: string[];
   sections: { id: string; label: string }[];
   onDelete: () => void;
   onDirtyChange: (dirty: boolean) => void;
@@ -204,18 +202,14 @@ export function PageEditor({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-1.5 xl:col-span-2">
           <Label htmlFor="doc-title">Title</Label>
           <Input id="doc-title" value={draft.title} maxLength={160} disabled={!canWrite} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="doc-slug">URL name</Label>
           <Input id="doc-slug" value={draft.slug} disabled={!canWrite} onChange={(e) => setDraft({ ...draft, slug: e.target.value.toLowerCase() })} />
-        </div>
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label htmlFor="doc-description">Short description (shown in search and at the top)</Label>
-          <Input id="doc-description" value={draft.description} maxLength={300} disabled={!canWrite} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
         </div>
         <div className="space-y-1.5">
           <Label>Section</Label>
@@ -232,9 +226,13 @@ export function PageEditor({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label htmlFor="doc-description">Short description (shown in search and at the top)</Label>
+          <Input id="doc-description" value={draft.description} maxLength={300} disabled={!canWrite} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
           <Label>Icon</Label>
-          <IconSelect value={draft.icon} icons={icons} onChange={(icon) => setDraft({ ...draft, icon })} />
+          <IconField value={draft.icon} onChange={(icon) => setDraft({ ...draft, icon })} />
         </div>
       </div>
 
