@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { setAccessToken, setUnauthorizedHandler } from '@/api/axiosClient';
 import type { AdminUser, AuthSession } from '@/types/auth';
+import { sessionStateStorage } from './sessionStorage';
 
 interface AuthState {
   admin: AdminUser | null;
@@ -45,6 +46,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'ormitech-admin-auth',
+      storage: createJSONStorage(() => sessionStateStorage),
       partialize: (state) => ({
         admin: state.admin,
         accessToken: state.accessToken,

@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { apiErrorMessage } from '@/lib/apiError';
 import { env } from '@/lib/constants';
@@ -239,12 +238,11 @@ export function PageEditor({
         </div>
       </div>
 
-      <Tabs defaultValue="write">
-        <TabsList>
-          <TabsTrigger value="write">Write</TabsTrigger>
-          <TabsTrigger value="preview">Preview</TabsTrigger>
-        </TabsList>
-        <TabsContent value="write" className="space-y-2">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="min-w-0 space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Write</Label>
+          </div>
           {canWrite && (
             <div className="flex flex-wrap items-center gap-1">
               {toolbar.map(({ label, icon: Icon, run }) => (
@@ -274,7 +272,7 @@ export function PageEditor({
             value={draft.content}
             disabled={!canWrite}
             spellCheck
-            className="min-h-[28rem] font-mono text-[13px] leading-relaxed"
+            className="h-[34rem] resize-none font-mono text-[13px] font-normal leading-relaxed"
             placeholder={'Write the page in markdown.\n\n## A heading\nSome text with **bold**, a [link](https://example.com), and a picture added with "Add picture".'}
             onChange={(e) => setDraft({ ...draft, content: e.target.value })}
             onPaste={(event) => {
@@ -294,15 +292,17 @@ export function PageEditor({
           />
           <p className="text-xs text-muted-foreground">You can also paste or drop a picture straight into the text. JPEG, PNG, WebP or GIF, up to 5 MB.</p>
           {uploadError && <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">{uploadError}</p>}
-        </TabsContent>
-        <TabsContent value="preview">
-          <div className="min-h-[28rem] rounded-md border border-border p-4">
+        </div>
+
+        <div className="min-w-0 space-y-2">
+          <Label>Live preview</Label>
+          <div className="h-[34rem] overflow-y-auto rounded-md border border-border bg-background p-4 lg:mt-10">
             {draft.title && <h1 className="mb-1 text-2xl font-semibold text-foreground">{draft.title}</h1>}
             {draft.description && <p className="mb-4 text-sm text-muted-foreground">{draft.description}</p>}
             <MarkdownPreview source={draft.content} />
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
 
       {updatePage.error != null && (
         <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">{apiErrorMessage(updatePage.error, 'The OrmiTech API refused the change.')}</p>
