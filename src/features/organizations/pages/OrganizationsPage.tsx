@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useChannels } from '@/features/catalog/hooks';
+import { IdentitySearch } from '@/features/organizations/components/IdentitySearch';
 import { OrganizationFormDialog } from '@/features/organizations/components/OrganizationFormDialog';
 import { PlanChangeDialog } from '@/features/organizations/components/PlanChangeDialog';
 import {
@@ -108,6 +109,8 @@ export default function OrganizationsPage() {
           )
         }
       />
+
+      <IdentitySearch />
 
       <Card>
         <div className="flex flex-wrap items-center gap-2 border-b border-border p-4">

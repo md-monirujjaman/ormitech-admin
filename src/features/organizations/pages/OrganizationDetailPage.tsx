@@ -20,6 +20,7 @@ import { FeaturesTab } from '@/features/organizations/components/tabs/FeaturesTa
 import { OverviewTab } from '@/features/organizations/components/tabs/OverviewTab';
 import { PlanTab } from '@/features/organizations/components/tabs/PlanTab';
 import { UsageTab } from '@/features/organizations/components/tabs/UsageTab';
+import { WorkspaceTab } from '@/features/organizations/components/tabs/WorkspaceTab';
 import { UsersTab } from '@/features/organizations/components/tabs/UsersTab';
 import {
   useAssignPlan,
@@ -37,7 +38,7 @@ import type { AiConfiguration } from '@/types/ai';
 import type { EntitlementOverrides, LimitKey, LimitValue } from '@/types/entitlements';
 import { TENANT_STATUSES, type TenantStatus } from '@/types/organization';
 
-const TABS = ['overview', 'users', 'plan', 'features', 'channels', 'ai', 'usage', 'billing', 'activity'] as const;
+const TABS = ['overview', 'workspace', 'users', 'plan', 'features', 'channels', 'ai', 'usage', 'billing', 'activity'] as const;
 
 export default function OrganizationDetailPage() {
   const { organizationId = '' } = useParams();
@@ -188,6 +189,7 @@ export default function OrganizationDetailPage() {
       <Tabs defaultValue={TABS[0]}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="workspace">Workspace</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="plan">Plan</TabsTrigger>
           <TabsTrigger value="features">Features</TabsTrigger>
@@ -200,6 +202,10 @@ export default function OrganizationDetailPage() {
 
         <TabsContent value="overview">
           <OverviewTab organization={organization} plan={plan} resolved={resolved} catalog={catalog} usage={usageQuery.data} />
+        </TabsContent>
+
+        <TabsContent value="workspace">
+          <WorkspaceTab organizationId={organization.id} />
         </TabsContent>
 
         <TabsContent value="users">
