@@ -15,6 +15,7 @@ import {
   Mail,
   Megaphone,
   MessageSquare,
+  Newspaper,
   Package,
   Tag,
   Plug,
@@ -73,6 +74,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Content',
     items: [
       { label: 'Documentation', href: ROUTES.docs, icon: BookOpen, permission: 'docs.read' },
+      { label: 'Blog', href: ROUTES.blog, icon: Newspaper, permission: 'blog.read' },
       { label: 'Pricing', href: ROUTES.pricing, icon: Tag, permission: 'pricing.read' },
       { label: 'Announcements', href: ROUTES.announcements, icon: Megaphone, permission: 'announcements.read' },
     ],

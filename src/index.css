@@ -229,3 +229,45 @@
   height: 0;
   pointer-events: none;
 }
+
+/* Tables, and the underline mark, in the article editor. */
+.rte table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+.rte th,
+.rte td {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  vertical-align: top;
+  position: relative;
+  min-width: 3rem;
+}
+.rte th {
+  background: var(--muted);
+  font-weight: 600;
+  text-align: left;
+}
+.rte td > p,
+.rte th > p {
+  margin: 0;
+}
+.rte .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+  pointer-events: none;
+}
+.rte hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+.rte img.ProseMirror-selectednode {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

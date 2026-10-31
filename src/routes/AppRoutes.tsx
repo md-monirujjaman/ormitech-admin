@@ -36,6 +36,8 @@ const AuditLogsPage = lazy(() => import('@/features/audit-logs/pages/AuditLogsPa
 const AnnouncementsPage = lazy(() => import('@/features/announcements/pages/AnnouncementsPage'));
 const PricingPage = lazy(() => import('@/features/pricing/pages/PricingPage'));
 const DocsPage = lazy(() => import('@/features/docs/pages/DocsPage'));
+const BlogPage = lazy(() => import('@/features/blog/pages/BlogPage'));
+const BlogEditorPage = lazy(() => import('@/features/blog/pages/BlogEditorPage'));
 const RolesPage = lazy(() => import('@/features/roles/pages/RolesPage'));
 
 /** Routes with a real page — everything else in NAV_SECTIONS renders <ComingSoon> instead. */
@@ -59,6 +61,7 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.auditLogs,
   ROUTES.roles,
   ROUTES.docs,
+  ROUTES.blog,
   ROUTES.pricing,
   ROUTES.announcements,
 ]);
@@ -287,6 +290,27 @@ export function AppRoutes() {
               <AdminRoute permission="docs.read">
                 <Lazy label="Loading documentation…">
                   <DocsPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.blog}
+            element={
+              <AdminRoute permission="blog.read">
+                <Lazy label="Loading blog…">
+                  <BlogPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path={`${ROUTES.blog}/:id`}
+            element={
+              <AdminRoute permission="blog.read">
+                <Lazy label="Loading article…">
+                  <BlogEditorPage />
                 </Lazy>
               </AdminRoute>
             }
