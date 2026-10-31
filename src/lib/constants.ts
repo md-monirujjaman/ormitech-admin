@@ -42,6 +42,7 @@ export const ROUTES = {
   storage: '/storage',
 
   docs: '/docs',
+  blog: '/blog',
   pricing: '/pricing',
   announcements: '/announcements',
 
