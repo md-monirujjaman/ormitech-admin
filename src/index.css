@@ -271,3 +271,48 @@
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* Sign-in screen: the card rises in once; reduced-motion visitors get it already in place. */
+@keyframes login-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes login-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes login-glow {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.login-rise {
+  animation: login-rise 0.65s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.login-fade {
+  animation: login-fade 1.1s ease-out both;
+}
+.login-glow {
+  animation: login-glow 5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-rise,
+  .login-fade,
+  .login-glow {
+    animation: none;
+  }
+}
