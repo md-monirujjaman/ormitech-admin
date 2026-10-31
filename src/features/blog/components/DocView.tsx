@@ -51,7 +51,8 @@ export function DocView({ doc }: { doc: BlogDoc }) {
         );
       case 'heading': {
         const level = Number(node.attrs?.level ?? 2);
-        const id = level <= 3 ? headings[seen++]?.id : undefined;
+        const hasText = (node.content ?? []).some((child) => child.text?.trim());
+        const id = level <= 3 && hasText ? headings[seen++]?.id : undefined;
         if (level === 2) return <h2 key={key} id={id} className="mt-10 scroll-mt-24 text-2xl font-semibold tracking-tight text-foreground">{children(node, key)}</h2>;
         if (level === 3) return <h3 key={key} id={id} className="mt-8 scroll-mt-24 text-xl font-semibold tracking-tight text-foreground">{children(node, key)}</h3>;
         return <h4 key={key} className="mt-6 text-lg font-semibold text-foreground">{children(node, key)}</h4>;
