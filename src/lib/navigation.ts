@@ -3,6 +3,7 @@ import {
   Bell,
   Blocks,
   Bot,
+  BrainCircuit,
   BookOpen,
   Building2,
   CreditCard,
@@ -56,6 +57,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Plans', href: ROUTES.plans, icon: Package, permission: 'plans.read' },
       { label: 'Features', href: ROUTES.features, icon: Sparkles, permission: 'features.read' },
       { label: 'AI Configuration', href: ROUTES.ai, icon: Bot, permission: 'ai.read' },
+      { label: 'AI Providers & Models', href: ROUTES.aiProviders, icon: BrainCircuit, permission: 'ai_providers.read' },
       { label: 'Channels', href: ROUTES.channels, icon: Radio, permission: 'channels.read' },
     ],
   },
@@ -119,12 +121,19 @@ export const NAV_SECTIONS: NavSection[] = [
  * still shows where it sits.
  */
 export function findNavMeta(pathname: string): { title: string; section: string | null } {
+  let best: { title: string; section: string | null; length: number } | null = null;
   for (const section of NAV_SECTIONS) {
     for (const item of section.items) {
-      if (pathname === item.href || pathname.startsWith(`${item.href}/`)) {
-        return { title: item.label, section: section.label === 'Overview' ? null : section.label };
-      }
+      if (!(pathname === item.href || pathname.startsWith(`${item.href}/`))) continue;
+      // The most specific item wins: /ai/providers belongs to "AI Providers & Models", not to /ai.
+      if (!best || item.href.length > best.length) best = { title: item.label, section: section.label === 'Overview' ? null : section.label, length: item.href.length };
     }
   }
-  return { title: 'OrmiTech Admin', section: null };
+  return best ? { title: best.title, section: best.section } : { title: 'OrmiTech Admin', section: null };
 }
+
+/**
+ * Whether another sidebar item lives under this item's path (/ai has /ai/providers). Such an item is highlighted only on
+ * its own page, so two entries are never lit at once; every other item still stays lit on its detail pages.
+ */
+export const hasNestedNavItem = (href: string): boolean => NAV_SECTIONS.some((section) => section.items.some((item) => item.href.startsWith(`${href}/`)));

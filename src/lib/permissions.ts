@@ -8,6 +8,7 @@ const ALL_PERMISSIONS: Permission[] = [
   'plans.read', 'plans.write',
   'features.read', 'features.write',
   'ai.read', 'ai.write',
+  'ai_providers.read', 'ai_providers.write',
   'channels.read', 'channels.write',
   'billing.read', 'billing.write',
   'subscriptions.read', 'subscriptions.write',
@@ -52,8 +53,8 @@ export const ROLE_DEFINITIONS: Role[] = [
   {
     name: 'ADMIN',
     label: 'Admin',
-    description: 'Full operational access; cannot manage other admin accounts or roles.',
-    permissions: ALL_PERMISSIONS.filter((p) => p !== 'admin_users.write' && p !== 'roles.write' && p !== 'storage.read'),
+    description: 'Full operational access; cannot manage other admin accounts, roles or AI providers.',
+    permissions: ALL_PERMISSIONS.filter((p) => p !== 'admin_users.write' && p !== 'roles.write' && p !== 'storage.read' && p !== 'ai_providers.read' && p !== 'ai_providers.write'),
   },
   {
     name: 'SUPPORT_ADMIN',

@@ -32,6 +32,8 @@ export const ROUTES = {
   plans: '/plans',
   features: '/features',
   ai: '/ai',
+  /** AI providers, their keys, the model catalogue, prices and which plans may use each model. */
+  aiProviders: '/ai/providers',
   channels: '/channels',
 
   billing: '/billing',
