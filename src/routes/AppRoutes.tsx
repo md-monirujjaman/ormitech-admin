@@ -37,6 +37,7 @@ const AnnouncementsPage = lazy(() => import('@/features/announcements/pages/Anno
 const PricingPage = lazy(() => import('@/features/pricing/pages/PricingPage'));
 const DocsPage = lazy(() => import('@/features/docs/pages/DocsPage'));
 const BlogPage = lazy(() => import('@/features/blog/pages/BlogPage'));
+const AiProvidersPage = lazy(() => import('@/features/ai-catalog/pages/AiProvidersPage'));
 const BlogEditorPage = lazy(() => import('@/features/blog/pages/BlogEditorPage'));
 const RolesPage = lazy(() => import('@/features/roles/pages/RolesPage'));
 
@@ -49,6 +50,7 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.features,
   ROUTES.channels,
   ROUTES.ai,
+  ROUTES.aiProviders,
   ROUTES.billing,
   ROUTES.subscriptions,
   ROUTES.payments,
@@ -235,6 +237,17 @@ export function AppRoutes() {
               <AdminRoute permission="ai.read">
                 <Lazy label="Loading AI configuration…">
                   <AiPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.aiProviders}
+            element={
+              <AdminRoute permission="ai_providers.read">
+                <Lazy label="Loading AI providers…">
+                  <AiProvidersPage />
                 </Lazy>
               </AdminRoute>
             }

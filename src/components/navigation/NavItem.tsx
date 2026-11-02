@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { hasNestedNavItem } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import type { NavItem as NavItemType } from '@/types/navigation';
 
@@ -7,6 +8,7 @@ export function NavItem({ item, collapsed, onNavigate }: { item: NavItemType; co
   const link = (
     <NavLink
       to={item.href}
+      end={hasNestedNavItem(item.href)}
       onClick={onNavigate}
       className={({ isActive }) =>
         cn(
