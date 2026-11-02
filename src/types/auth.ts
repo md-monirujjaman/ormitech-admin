@@ -19,6 +19,8 @@ export type Permission =
   | 'ai.write'
   | 'ai_providers.read'
   | 'ai_providers.write'
+  | 'ai_credits.read'
+  | 'ai_credits.write'
   | 'channels.read'
   | 'channels.write'
   | 'billing.read'

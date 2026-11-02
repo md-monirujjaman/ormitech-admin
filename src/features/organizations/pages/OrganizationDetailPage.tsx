@@ -22,6 +22,7 @@ import { PlanTab } from '@/features/organizations/components/tabs/PlanTab';
 import { UsageTab } from '@/features/organizations/components/tabs/UsageTab';
 import { WorkspaceTab } from '@/features/organizations/components/tabs/WorkspaceTab';
 import { UsersTab } from '@/features/organizations/components/tabs/UsersTab';
+import { OrgCreditsTab } from '@/features/ai-credits/components/OrgCreditsTab';
 import {
   useAssignPlan,
   useOrganization,
@@ -38,7 +39,7 @@ import type { AiConfiguration } from '@/types/ai';
 import type { EntitlementOverrides, LimitKey, LimitValue } from '@/types/entitlements';
 import { TENANT_STATUSES, type TenantStatus } from '@/types/organization';
 
-const TABS = ['overview', 'workspace', 'users', 'plan', 'features', 'channels', 'ai', 'usage', 'billing', 'activity'] as const;
+const TABS = ['overview', 'workspace', 'users', 'plan', 'features', 'channels', 'ai', 'ai-credits', 'usage', 'billing', 'activity'] as const;
 
 export default function OrganizationDetailPage() {
   const { organizationId = '' } = useParams();
@@ -49,6 +50,8 @@ export default function OrganizationDetailPage() {
   const canWriteFeatures = can('features.write');
   const canWriteChannels = can('channels.write');
   const canWriteAi = can('ai.write');
+  const canReadCredits = can('ai_credits.read');
+  const canWriteCredits = can('ai_credits.write');
 
   const organizationQuery = useOrganization(organizationId);
   const usageQuery = useOrganizationUsage(organizationId);
@@ -195,6 +198,7 @@ export default function OrganizationDetailPage() {
           <TabsTrigger value="features">Features</TabsTrigger>
           <TabsTrigger value="channels">Channels</TabsTrigger>
           <TabsTrigger value="ai">AI</TabsTrigger>
+          {canReadCredits && <TabsTrigger value="ai-credits">AI credits</TabsTrigger>}
           <TabsTrigger value="usage">Usage</TabsTrigger>
           <TabsTrigger value="billing">Billing</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -256,6 +260,12 @@ export default function OrganizationDetailPage() {
             onSave={saveAi}
           />
         </TabsContent>
+
+        {canReadCredits && (
+          <TabsContent value="ai-credits">
+            <OrgCreditsTab organizationId={organizationId} canWrite={canWriteCredits} />
+          </TabsContent>
+        )}
 
         <TabsContent value="usage">
           <UsageTab
