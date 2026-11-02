@@ -13,6 +13,9 @@ import type { Catalog } from '@/features/catalog/hooks';
 import { planSchema, type PlanFormValues } from '@/features/plans/schemas';
 import type { LimitValue } from '@/types/entitlements';
 import type { Plan, PlanInput } from '@/types/plan';
+import { isMockDataSource } from '@/api/dataSource';
+import { PlanAllowanceSection } from '@/features/billing-ops/components/PlanAllowanceSection';
+import { usePermissions } from '@/hooks/usePermissions';
 
 function emptyToggles(keys: string[]): Record<string, boolean> {
   return Object.fromEntries(keys.map((key) => [key, false]));
@@ -44,6 +47,7 @@ export function PlanFormDialog({
   onSubmit: (input: PlanInput) => void;
 }) {
   const isEdit = Boolean(plan);
+  const { can } = usePermissions();
   const featureKeys = catalog.features.map((feature) => feature.key);
   const channelKeys = catalog.channels.map((channel) => channel.key);
   const limitKeys = catalog.limits.map((limit) => limit.key);
@@ -258,6 +262,7 @@ export function PlanFormDialog({
             </Button>
           </DialogFooter>
         </form>
+        {isEdit && plan && !isMockDataSource && can('ai_credits.read') && <PlanAllowanceSection planId={plan.id} canWrite={can('ai_credits.write')} />}
       </DialogContent>
     </Dialog>
   );

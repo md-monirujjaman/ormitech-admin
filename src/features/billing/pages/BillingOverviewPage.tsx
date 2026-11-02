@@ -10,8 +10,12 @@ import {
 } from '@/features/billing/components/charts';
 import { useBillingCharts, useBillingSummary } from '@/features/billing/hooks';
 import { formatCurrency } from '@/lib/billing';
+import { isMockDataSource } from '@/api/dataSource';
+import { ConsistencyCard } from '@/features/billing-ops/components/ConsistencyCard';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function BillingOverviewPage() {
+  const { can } = usePermissions();
   const summaryQuery = useBillingSummary();
   const chartsQuery = useBillingCharts();
 
@@ -95,6 +99,8 @@ export default function BillingOverviewPage() {
           </CardContent>
         </Card>
       </div>
+
+      {!isMockDataSource && can('ai_credits.read') && <ConsistencyCard />}
     </div>
   );
 }
