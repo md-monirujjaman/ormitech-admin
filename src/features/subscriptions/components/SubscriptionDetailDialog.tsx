@@ -7,6 +7,9 @@ import { useOrganizationEntitlements } from '@/features/organizations/useEntitle
 import { formatBillingDate, formatCurrency } from '@/lib/billing';
 import { formatLimit } from '@/lib/entitlements';
 import type { Subscription } from '@/types/billing';
+import { isMockDataSource } from '@/api/dataSource';
+import { SubscriptionOps } from '@/features/billing-ops/components/SubscriptionOps';
+import { usePermissions } from '@/hooks/usePermissions';
 
 /**
  * Full subscription record plus the entitlements it currently confers.
@@ -21,6 +24,7 @@ export function SubscriptionDetailDialog({
   subscription: Subscription;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { can } = usePermissions();
   const organizationQuery = useOrganization(subscription.organizationId);
   const organization = organizationQuery.data ?? null;
   const { catalog, plan, resolved, isLoading } = useOrganizationEntitlements(organization);
@@ -64,6 +68,8 @@ export function SubscriptionDetailDialog({
                 </div>
               ))}
             </dl>
+
+            {!isMockDataSource && can('ai_credits.write') && <SubscriptionOps subscriptionId={subscription.id} currentPlanId={subscription.planId} />}
 
             <div className="space-y-3">
               <p className="text-sm font-semibold text-foreground">Entitlements</p>

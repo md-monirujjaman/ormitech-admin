@@ -19,12 +19,16 @@ import { useOrganizations } from '@/features/organizations/hooks';
 import { usePermissions } from '@/hooks/usePermissions';
 import { formatBillingDate, formatCurrency } from '@/lib/billing';
 import { INVOICE_STATUSES, type Invoice, type InvoiceStatus } from '@/types/billing';
+import { isMockDataSource } from '@/api/dataSource';
+import { InvoiceActions, NewInvoiceDialog } from '@/features/billing-ops/components/InvoiceOps';
 
 const PAGE_SIZE = 10;
 
 export default function InvoicesPage() {
   const { can } = usePermissions();
   const canWrite = can('invoices.write');
+  const canManage = !isMockDataSource && can('ai_credits.write');
+  const [creating, setCreating] = useState(false);
 
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<InvoiceStatus | 'all'>('all');
@@ -58,6 +62,11 @@ export default function InvoicesPage() {
             className="w-full sm:max-w-sm"
             aria-label="Search invoices"
           />
+          {canManage && (
+            <Button className="sm:ml-auto" onClick={() => setCreating(true)}>
+              New invoice
+            </Button>
+          )}
           <Select
             value={status}
             onValueChange={(value) => {
@@ -183,9 +192,12 @@ export default function InvoicesPage() {
                 </div>
               ))}
             </dl>
+            {canManage && <InvoiceActions invoice={{ id: viewing.id, status: viewing.status, currency: viewing.currency, number: viewing.number }} onDone={() => setViewing(null)} />}
           </DialogContent>
         </Dialog>
       )}
+
+      {creating && <NewInvoiceDialog organizations={organizations.map((organization) => ({ id: organization.id, name: organization.name }))} onClose={() => setCreating(false)} />}
 
       {downloadNotice && (
         <Dialog open onOpenChange={(open) => !open && setDownloadNotice(null)}>
