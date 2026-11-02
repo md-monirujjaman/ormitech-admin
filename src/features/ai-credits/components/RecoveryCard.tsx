@@ -46,8 +46,11 @@ export function RecoveryCard({ recovery, canWrite }: { recovery: RecoveryStatus;
       <CardHeader>
         <CardTitle>Crash recovery</CardTitle>
         <CardDescription>
-          Finishes AI credit work that a crash or restart left half done. <Badge variant={recovery.enforceAllowed ? 'success' : 'warning'}>{recovery.enforceAllowed ? 'Confirmed: enforce may be used' : 'Not confirmed: enforce is unavailable'}</Badge>
+          Finishes AI credit work that a crash or restart left half done.
         </CardDescription>
+        <div>
+          <Badge variant={recovery.enforceAllowed ? 'success' : 'warning'}>{recovery.enforceAllowed ? 'Confirmed: enforce may be used' : 'Not confirmed: enforce is unavailable'}</Badge>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-xs text-muted-foreground">

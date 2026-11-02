@@ -106,8 +106,11 @@ export function CreditPolicyTab({ canWrite }: { canWrite: boolean }) {
         <CardHeader>
           <CardTitle>Credit policy</CardTitle>
           <CardDescription>
-            How the provider’s cost becomes credits, and whether credits are counted at all. <Badge variant={policy.conversionDecided ? 'success' : 'outline'}>{policy.conversionDecided ? 'Conversion decided' : 'Conversion not decided'}</Badge>
+            How the provider’s cost becomes credits, and whether credits are counted at all.
           </CardDescription>
+          <div>
+            <Badge variant={policy.conversionDecided ? 'success' : 'outline'}>{policy.conversionDecided ? 'Conversion decided' : 'Conversion not decided'}</Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <form
