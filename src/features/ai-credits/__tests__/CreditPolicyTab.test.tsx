@@ -6,6 +6,22 @@ import { apiFailure, ok, renderWithClient } from '@/features/ai-catalog/__tests_
 import { CreditPolicyTab } from '../components/CreditPolicyTab';
 import { policy } from './fixtures';
 
+const result = (overrides: Record<string, unknown> = {}) => ({
+  startedAt: '2026-11-02T10:00:00.000Z',
+  finishedAt: '2026-11-02T10:00:01.000Z',
+  organizations: 2,
+  failedOrganizations: 0,
+  holdsReleased: 1,
+  holdsSettled: 3,
+  lateCharges: 1,
+  snapshotsMade: 4,
+  creditsCharged: '405.00000000',
+  creditsShortfall: '0.00000000',
+  remaining: { expiredHolds: 0, heldWithUsage: 0, unpaidUsage: 0, uncostedUsage: 0, total: 0 },
+  ...overrides,
+});
+const confirmed = { scheduled: true, lastRunAt: '2026-11-02T10:00:01.000Z', lastResult: result(), confirmedAt: '2026-11-02T10:00:02.000Z', confirmedBy: 'a1', enforceAllowed: true };
+
 vi.mock('@/api/axiosClient', () => ({ axiosClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn() } }));
 const http = axiosClient as unknown as Record<'get' | 'post' | 'put' | 'patch', Mock>;
 
@@ -75,8 +91,8 @@ describe('CreditPolicyTab', () => {
   });
 
   it('warns strongly before enforcement is turned on for the whole platform', async () => {
-    serve(policy({ ...decided, mode: 'observe' }));
-    http.patch.mockResolvedValue(ok(policy({ ...decided, mode: 'enforce' })));
+    serve(policy({ ...decided, mode: 'observe', recovery: confirmed }));
+    http.patch.mockResolvedValue(ok(policy({ ...decided, mode: 'enforce', recovery: confirmed })));
     mount();
     await screen.findByText('Conversion decided');
     await userEvent.click(screen.getByRole('combobox', { name: 'Platform mode' }));
@@ -121,6 +137,61 @@ describe('CreditPolicyTab', () => {
     serve();
     await userEvent.click(screen.getByRole('button', { name: 'Check again' }));
     expect(await screen.findByText('All buckets reconcile')).toBeTruthy();
+  });
+
+  describe('crash recovery', () => {
+    it('keeps enforce unavailable, and says why, until recovery is confirmed', async () => {
+      mount();
+      expect(await screen.findByText('Not confirmed: enforce is unavailable')).toBeTruthy();
+      expect(screen.getByText(/does not run recovery by itself/)).toBeTruthy();
+      expect(screen.getByText(/It has not run yet\./)).toBeTruthy();
+      await userEvent.click(screen.getByRole('combobox', { name: 'Platform mode' }));
+      const enforce = await screen.findByRole('option', { name: /Enforce/ });
+      expect(enforce.getAttribute('aria-disabled')).toBe('true');
+      expect(enforce.textContent).toMatch(/needs recovery confirmed/);
+    });
+
+    it('allows enforce once recovery is confirmed, and shows what the last run did', async () => {
+      serve(policy({ ...decided, recovery: confirmed }));
+      mount();
+      expect(await screen.findByText('Confirmed: enforce may be used')).toBeTruthy();
+      expect(screen.getByText('Nothing is left unfinished')).toBeTruthy();
+      expect(screen.getByText('405')).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Confirm recovery' })).toBeNull();
+      await userEvent.click(screen.getByRole('combobox', { name: 'Platform mode' }));
+      expect((await screen.findByRole('option', { name: 'Enforce' })).getAttribute('aria-disabled')).not.toBe('true');
+    });
+
+    it('runs recovery on request and shows the outcome from the API', async () => {
+      http.post.mockResolvedValue(ok(result({ holdsSettled: 7 })));
+      mount();
+      await userEvent.click(await screen.findByRole('button', { name: 'Run recovery now' }));
+      expect(await screen.findByText('Holds settled from their requests')).toBeTruthy();
+      expect(http.post).toHaveBeenCalledWith('/admin/ai/credits/recovery/run');
+      expect(within(screen.getByTestId('recovery-result')).getByText('7')).toBeTruthy();
+    });
+
+    it('confirms through the API, and shows the refusal inside the dialog when recovery is not clean', async () => {
+      http.post.mockRejectedValue(apiFailure(409, 'Recovery is not clean yet: 1 workspace(s) failed, 2 item(s) unfinished, 0 bucket(s) out of balance'));
+      mount();
+      await userEvent.click(await screen.findByRole('button', { name: 'Confirm recovery' }));
+      await userEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Run and confirm' }));
+      expect(await within(screen.getByRole('alertdialog')).findByText(/Recovery is not clean yet/)).toBeTruthy();
+      expect(http.post).toHaveBeenCalledWith('/admin/ai/credits/recovery/confirm');
+
+      http.post.mockResolvedValue(ok({ confirmed: true, result: result() }));
+      serve(policy({ recovery: confirmed }));
+      await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Run and confirm' }));
+      await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+      expect(await screen.findByText('Confirmed: enforce may be used')).toBeTruthy();
+    });
+
+    it('offers no recovery buttons to someone who may not write', async () => {
+      mount(false);
+      await screen.findByText('Not confirmed: enforce is unavailable');
+      expect(screen.queryByRole('button', { name: 'Run recovery now' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Confirm recovery' })).toBeNull();
+    });
   });
 
   it('says plainly when the API refuses with 403', async () => {

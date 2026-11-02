@@ -1,5 +1,5 @@
 import { axiosClient } from '@/api/axiosClient';
-import type { AdjustInput, CreditMode, CreditPolicy, CreditsOverview, GrantInput, LedgerEntry, LedgerResult, Mismatch, Page, Reservation, ReverseInput, UpdatePolicyInput, UsageCost } from './types';
+import type { AdjustInput, CreditMode, CreditPolicy, RecoveryResult, CreditsOverview, GrantInput, LedgerEntry, LedgerResult, Mismatch, Page, Reservation, ReverseInput, UpdatePolicyInput, UsageCost } from './types';
 
 const unwrap = <T>(promise: Promise<{ data: { data: T } }>) => promise.then((response) => response.data.data);
 const org = (organizationId: string) => `/admin/organizations/${organizationId}`;
@@ -21,5 +21,7 @@ export const aiCreditsApi = {
 
   policy: () => unwrap<CreditPolicy>(axiosClient.get('/admin/ai/credit-policy')),
   updatePolicy: (input: UpdatePolicyInput) => unwrap<CreditPolicy>(axiosClient.patch('/admin/ai/credit-policy', input)),
+  runRecovery: () => unwrap<RecoveryResult>(axiosClient.post('/admin/ai/credits/recovery/run')),
+  confirmRecovery: () => unwrap<{ confirmed: boolean; result: RecoveryResult }>(axiosClient.post('/admin/ai/credits/recovery/confirm')),
   reconciliation: () => unwrap<{ ok: boolean; mismatches: Mismatch[] }>(axiosClient.get('/admin/ai/credits/reconciliation')),
 };

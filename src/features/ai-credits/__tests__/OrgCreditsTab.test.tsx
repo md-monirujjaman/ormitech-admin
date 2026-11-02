@@ -306,8 +306,18 @@ describe('OrgCreditsTab', () => {
   });
 
   describe('mode, expiry and backfill', () => {
+    it('keeps enforce unavailable for a workspace until recovery is confirmed', async () => {
+      mount();
+      await screen.findByText('Available now');
+      await userEvent.click(screen.getByRole('combobox', { name: 'Workspace mode' }));
+      const enforce = await screen.findByRole('option', { name: /Enforce/ });
+      expect(enforce.getAttribute('aria-disabled')).toBe('true');
+      expect(enforce.textContent).toMatch(/needs recovery confirmed/);
+    });
+
     it('asks first when a workspace is set to enforce, says what it means, and sends only on confirmation', async () => {
       http.put.mockResolvedValue(ok({ organizationId: ORG, mode: 'enforce' }));
+      serve({ overview: overview({ mode: { workspace: null, platform: 'off', effective: 'off', enforceAllowed: true } }) });
       mount();
       await screen.findByText('Available now');
       await userEvent.click(screen.getByRole('combobox', { name: 'Workspace mode' }));

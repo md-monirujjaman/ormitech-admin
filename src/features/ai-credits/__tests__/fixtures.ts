@@ -16,7 +16,7 @@ export const bucket = (overrides: Partial<CreditBucket> = {}): CreditBucket => (
 });
 
 export const overview = (overrides: Partial<CreditsOverview> = {}): CreditsOverview => ({
-  mode: { workspace: null, platform: 'off', effective: 'off' },
+  mode: { workspace: null, platform: 'off', effective: 'off', enforceAllowed: false },
   wallet: {
     available: '1000.00000000',
     reserved: '0.00000000',
@@ -98,5 +98,6 @@ export const policy = (overrides: Partial<CreditPolicy> = {}): CreditPolicy => (
   conversionDecided: false,
   updatedAt: '2026-11-01T08:00:00.000Z',
   updatedBy: null,
+  recovery: { scheduled: false, lastRunAt: null, lastResult: null, confirmedAt: null, confirmedBy: null, enforceAllowed: false },
   ...overrides,
 });

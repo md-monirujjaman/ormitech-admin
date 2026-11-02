@@ -60,4 +60,11 @@ describe('aiCreditsApi', () => {
     http.get.mockRejectedValueOnce(apiFailure(status, 'Refused'));
     await expect(aiCreditsApi.overview(ORG)).rejects.toMatchObject({ response: { status } });
   });
+
+  it('runs and confirms recovery against the API', async () => {
+    await aiCreditsApi.runRecovery();
+    expect(http.post).toHaveBeenLastCalledWith('/admin/ai/credits/recovery/run');
+    await aiCreditsApi.confirmRecovery();
+    expect(http.post).toHaveBeenLastCalledWith('/admin/ai/credits/recovery/confirm');
+  });
 });

@@ -50,3 +50,15 @@ export function useUpdateCreditPolicy() {
     },
   });
 }
+
+/** Running or confirming recovery changes what the policy says (when it ran, whether enforce is allowed) and what the workspaces show. */
+function useRecoveryMutation<TResult>(run: () => Promise<TResult>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: run,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ai-credits'] }),
+  });
+}
+
+export const useRunRecovery = () => useRecoveryMutation(aiCreditsApi.runRecovery);
+export const useConfirmRecovery = () => useRecoveryMutation(aiCreditsApi.confirmRecovery);

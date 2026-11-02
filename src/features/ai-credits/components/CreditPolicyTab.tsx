@@ -13,6 +13,7 @@ import { LoadFailed } from '@/features/ai-catalog/components/LoadFailed';
 import { formatCredits, formatWhen, MODE_EXPLANATION, MODE_LABEL } from '../format';
 import { useCreditPolicy, useReconciliation, useUpdateCreditPolicy } from '../hooks';
 import { fieldErrors, policySchema } from '../schemas';
+import { RecoveryCard } from './RecoveryCard';
 import type { CreditMode, CreditPolicy, UpdatePolicyInput } from '../types';
 
 type Notice = { message: string; tone: 'success' | 'error' } | null;
@@ -127,7 +128,9 @@ export function CreditPolicyTab({ canWrite }: { canWrite: boolean }) {
                 <SelectContent>
                   <SelectItem value="off">Off</SelectItem>
                   <SelectItem value="observe">Observe</SelectItem>
-                  <SelectItem value="enforce">Enforce</SelectItem>
+                  <SelectItem value="enforce" disabled={!policy.recovery.enforceAllowed && policy.mode !== 'enforce'}>
+                    Enforce{policy.recovery.enforceAllowed || policy.mode === 'enforce' ? '' : ' (needs recovery confirmed)'}
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">{MODE_EXPLANATION[values.mode]} A workspace can be set to its own mode, which wins over this one.</p>
@@ -175,6 +178,8 @@ export function CreditPolicyTab({ canWrite }: { canWrite: boolean }) {
           </form>
         </CardContent>
       </Card>
+
+      <RecoveryCard recovery={policy.recovery} canWrite={canWrite} />
 
       <Card>
         <CardHeader>

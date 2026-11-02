@@ -199,7 +199,9 @@ export function OrgCreditsTab({ organizationId, canWrite }: { organizationId: st
                     <SelectItem value={FOLLOW_PLATFORM}>Follow the platform</SelectItem>
                     <SelectItem value="off">Off</SelectItem>
                     <SelectItem value="observe">Observe</SelectItem>
-                    <SelectItem value="enforce">Enforce</SelectItem>
+                    <SelectItem value="enforce" disabled={!mode.enforceAllowed && mode.workspace !== 'enforce'}>
+                      Enforce{mode.enforceAllowed || mode.workspace === 'enforce' ? '' : ' (needs recovery confirmed)'}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               )}

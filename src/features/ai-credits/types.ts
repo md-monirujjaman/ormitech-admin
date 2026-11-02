@@ -32,7 +32,7 @@ export interface Mismatch {
 }
 
 export interface CreditsOverview {
-  mode: { workspace: CreditMode | null; platform: CreditMode; effective: CreditMode };
+  mode: { workspace: CreditMode | null; platform: CreditMode; effective: CreditMode; enforceAllowed: boolean };
   wallet: WalletSummary;
   reconciliation: { ok: boolean; mismatches: Mismatch[] };
   hasReservations: boolean;
@@ -106,6 +106,33 @@ export interface CreditPolicy {
   conversionDecided: boolean;
   updatedAt: string;
   updatedBy: string | null;
+  recovery: RecoveryStatus;
+}
+
+/** What one recovery pass did, and what it left unfinished. */
+export interface RecoveryResult {
+  startedAt: string;
+  finishedAt: string;
+  organizations: number;
+  failedOrganizations: number;
+  holdsReleased: number;
+  holdsSettled: number;
+  lateCharges: number;
+  snapshotsMade: number;
+  creditsCharged: string;
+  creditsShortfall: string;
+  remaining: { expiredHolds: number; heldWithUsage: number; unpaidUsage: number; uncostedUsage: number; total: number };
+}
+
+export interface RecoveryStatus {
+  /** Whether the API runs the sweep by itself (AI_CREDIT_RECOVERY_ENABLED). */
+  scheduled: boolean;
+  lastRunAt: string | null;
+  lastResult: RecoveryResult | null;
+  confirmedAt: string | null;
+  confirmedBy: string | null;
+  /** Enforce mode can be switched on only when this is true. */
+  enforceAllowed: boolean;
 }
 
 export interface UpdatePolicyInput {
