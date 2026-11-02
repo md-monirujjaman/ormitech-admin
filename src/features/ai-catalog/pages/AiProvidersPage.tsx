@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermissions } from '@/hooks/usePermissions';
+import { CreditPolicyTab } from '@/features/ai-credits/components/CreditPolicyTab';
 import { ModelsTab } from '../components/ModelsTab';
 import { PlanAccessTab } from '../components/PlanAccessTab';
 import { ProvidersTab } from '../components/ProvidersTab';
@@ -24,6 +25,8 @@ const TONE_STYLE: Record<NoticeTone, { box: string; icon: typeof CheckCircle2 }>
 export default function AiProvidersPage() {
   const { can } = usePermissions();
   const canWrite = can('ai_providers.write');
+  const canReadCredits = can('ai_credits.read');
+  const canWriteCredits = can('ai_credits.write');
   const [notice, setNotice] = useState<{ message: string; tone: NoticeTone } | null>(null);
 
   const notify = useCallback((message: string, tone: NoticeTone = 'success') => setNotice({ message, tone }), []);
@@ -72,6 +75,7 @@ export default function AiProvidersPage() {
           <TabsTrigger value="providers">Providers</TabsTrigger>
           <TabsTrigger value="models">Models & pricing</TabsTrigger>
           <TabsTrigger value="access">Plan access</TabsTrigger>
+          {canReadCredits && <TabsTrigger value="credits">Credit policy</TabsTrigger>}
         </TabsList>
         <TabsContent value="providers" className="pt-4">
           <ProvidersTab canWrite={canWrite} notify={notify} />
@@ -82,6 +86,11 @@ export default function AiProvidersPage() {
         <TabsContent value="access" className="pt-4">
           <PlanAccessTab canWrite={canWrite} notify={notify} />
         </TabsContent>
+        {canReadCredits && (
+          <TabsContent value="credits" className="pt-4">
+            <CreditPolicyTab canWrite={canWriteCredits} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
