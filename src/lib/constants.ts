@@ -66,4 +66,6 @@ export const ROUTES = {
   featureFlags: '/feature-flags',
 
   support: '/support',
+  fastSupport: '/fast-support',
+  fastSupportModerators: '/fast-support/moderators',
 } as const;

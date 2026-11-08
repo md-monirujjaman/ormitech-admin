@@ -15,6 +15,7 @@ import {
   ListTodo,
   Mail,
   GraduationCap,
+  Headset,
   Megaphone,
   MessageSquare,
   Newspaper,
@@ -109,6 +110,13 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Email', href: ROUTES.email, icon: Mail, permission: 'email.read' },
       { label: 'Notifications', href: ROUTES.notifications, icon: Bell, permission: 'notifications.read' },
       { label: 'Feature Flags', href: ROUTES.featureFlags, icon: Flag, permission: 'feature_flags.read' },
+    ],
+  },
+  {
+    label: 'Fast Support',
+    items: [
+      { label: 'Support Desk', href: ROUTES.fastSupport, icon: Headset, permission: 'fastsupport.use' },
+      { label: 'Moderators', href: ROUTES.fastSupportModerators, icon: UserCog, permission: 'fastsupport.moderators' },
     ],
   },
   {

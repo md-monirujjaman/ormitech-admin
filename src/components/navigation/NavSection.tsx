@@ -1,11 +1,14 @@
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuthStore } from '@/store/authStore';
 import { NavItem } from '@/components/navigation/NavItem';
 import { cn } from '@/lib/utils';
 import type { NavSection as NavSectionType } from '@/types/navigation';
 
 export function NavSection({ section, collapsed, onNavigate }: { section: NavSectionType; collapsed?: boolean; onNavigate?: () => void }) {
   const { can } = usePermissions();
-  const visibleItems = section.items.filter((item) => can(item.permission));
+  // A moderator has Fast Support and nothing else: the links that need no permission (the dashboard) are not for them either.
+  const moderator = useAuthStore((state) => state.admin?.roles.includes('MODERATOR') ?? false);
+  const visibleItems = section.items.filter((item) => can(item.permission) && (!moderator || item.permission !== undefined));
 
   if (visibleItems.length === 0) return null;
 

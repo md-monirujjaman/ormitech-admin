@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { ROUTES } from '@/lib/constants';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { SupportRealtime } from '@/features/fast-support/SupportRealtime';
 import { Topbar } from '@/components/layout/Topbar';
 
 export function AdminLayout() {
@@ -9,6 +10,7 @@ export function AdminLayout() {
   const { pathname } = useLocation();
   const wide = [ROUTES.docs, ROUTES.pricing].some((route) => pathname === route || pathname.startsWith(`${route}/`));
   return (
+    <SupportRealtime>
     <div className="flex min-h-svh bg-muted/30">
       <Sidebar />
       <MobileSidebar />
@@ -21,5 +23,6 @@ export function AdminLayout() {
         </main>
       </div>
     </div>
+    </SupportRealtime>
   );
 }

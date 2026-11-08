@@ -37,6 +37,8 @@ interface AdminLoginResponse {
  */
 function toUiRoles(roles: string[]): RoleName[] {
   if (roles.includes('super_admin')) return ['SUPER_ADMIN'];
+  // A moderator runs Fast Support and nothing else; the API refuses them everywhere else too.
+  if (roles.every((role) => role === 'moderator') && roles.length > 0) return ['MODERATOR'];
   // The documentation role sees the documentation screen and little else (its permissions are in lib/permissions.ts).
   if (roles.includes('content_admin')) return ['CONTENT_ADMIN'];
   return ['ADMIN'];

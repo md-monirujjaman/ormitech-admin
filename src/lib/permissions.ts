@@ -22,6 +22,7 @@ const ALL_PERMISSIONS: Permission[] = [
   'pricing.read', 'pricing.write',
   'announcements.read', 'announcements.write',
   'tutorials.read', 'tutorials.write',
+  'fastsupport.use', 'fastsupport.moderators',
   'api.read', 'api.write',
   'webhooks.read', 'webhooks.write',
   'integrations.read', 'integrations.write',
@@ -56,7 +57,13 @@ export const ROLE_DEFINITIONS: Role[] = [
     name: 'ADMIN',
     label: 'Admin',
     description: 'Full operational access; cannot manage other admin accounts, roles, AI providers or AI credits.',
-    permissions: ALL_PERMISSIONS.filter((p) => p !== 'admin_users.write' && p !== 'roles.write' && p !== 'storage.read' && p !== 'ai_providers.read' && p !== 'ai_providers.write' && p !== 'ai_credits.read' && p !== 'ai_credits.write'),
+    permissions: ALL_PERMISSIONS.filter((p) => p !== 'admin_users.write' && p !== 'roles.write' && p !== 'fastsupport.use' && p !== 'fastsupport.moderators' && p !== 'storage.read' && p !== 'ai_providers.read' && p !== 'ai_providers.write' && p !== 'ai_credits.read' && p !== 'ai_credits.write'),
+  },
+  {
+    name: 'MODERATOR',
+    label: 'Moderator',
+    description: 'Handles Fast Support requests and nothing else.',
+    permissions: ['fastsupport.use'],
   },
   {
     name: 'SUPPORT_ADMIN',

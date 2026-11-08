@@ -67,9 +67,11 @@ export type Permission =
   | 'feature_flags.read'
   | 'feature_flags.write'
   | 'support.read'
-  | 'support.write';
+  | 'support.write'
+  | 'fastsupport.use'
+  | 'fastsupport.moderators';
 
-export type RoleName = 'SUPER_ADMIN' | 'ADMIN' | 'SUPPORT_ADMIN' | 'BILLING_ADMIN' | 'CONTENT_ADMIN' | 'ANALYTICS_ADMIN';
+export type RoleName = 'SUPER_ADMIN' | 'ADMIN' | 'MODERATOR' | 'SUPPORT_ADMIN' | 'BILLING_ADMIN' | 'CONTENT_ADMIN' | 'ANALYTICS_ADMIN';
 
 export interface Role {
   name: RoleName;
