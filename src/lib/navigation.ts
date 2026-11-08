@@ -14,6 +14,7 @@ import {
   LifeBuoy,
   ListTodo,
   Mail,
+  GraduationCap,
   Megaphone,
   MessageSquare,
   Newspaper,
@@ -79,6 +80,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Blog', href: ROUTES.blog, icon: Newspaper, permission: 'blog.read' },
       { label: 'Pricing', href: ROUTES.pricing, icon: Tag, permission: 'pricing.read' },
       { label: 'Announcements', href: ROUTES.announcements, icon: Megaphone, permission: 'announcements.read' },
+      { label: 'Tutorials', href: ROUTES.tutorials, icon: GraduationCap, permission: 'tutorials.read' },
     ],
   },
   {
