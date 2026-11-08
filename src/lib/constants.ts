@@ -47,6 +47,7 @@ export const ROUTES = {
   blog: '/blog',
   pricing: '/pricing',
   announcements: '/announcements',
+  tutorials: '/tutorials',
 
   api: '/api',
   webhooks: '/webhooks',
