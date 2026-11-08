@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { ComingSoon } from '@/components/ui/ComingSoon';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -35,6 +36,9 @@ const ConversationDetailPage = lazy(() => import('@/features/conversations/pages
 const AuditLogsPage = lazy(() => import('@/features/audit-logs/pages/AuditLogsPage'));
 const AnnouncementsPage = lazy(() => import('@/features/announcements/pages/AnnouncementsPage'));
 const TutorialsPage = lazy(() => import('@/features/tutorials/pages/TutorialsPage'));
+const SupportDeskPage = lazy(() => import('@/features/fast-support/pages/SupportDeskPage'));
+const SupportSessionPage = lazy(() => import('@/features/fast-support/pages/SupportSessionPage'));
+const ModeratorsPage = lazy(() => import('@/features/fast-support/pages/ModeratorsPage'));
 const PricingPage = lazy(() => import('@/features/pricing/pages/PricingPage'));
 const DocsPage = lazy(() => import('@/features/docs/pages/DocsPage'));
 const BlogPage = lazy(() => import('@/features/blog/pages/BlogPage'));
@@ -68,9 +72,17 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.pricing,
   ROUTES.announcements,
   ROUTES.tutorials,
+  ROUTES.fastSupport,
+  ROUTES.fastSupportModerators,
 ]);
 
 const comingSoonItems = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => !IMPLEMENTED_ROUTES.has(item.href));
+
+/** Where an administrator lands: a moderator goes straight to Fast Support, everyone else to the dashboard. */
+function HomeRedirect() {
+  const roles = useAuthStore((state) => state.admin?.roles ?? []);
+  return <Navigate to={roles.includes('MODERATOR') ? ROUTES.fastSupport : ROUTES.dashboard} replace />;
+}
 
 function Lazy({ label, children }: { label: string; children: React.ReactNode }) {
   return <Suspense fallback={<LoadingState label={label} />}>{children}</Suspense>;
@@ -84,7 +96,7 @@ export function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AdminLayout />}>
-          <Route index element={<Navigate to={ROUTES.dashboard} replace />} />
+          <Route index element={<HomeRedirect />} />
 
           <Route
             path={ROUTES.dashboard}
@@ -337,6 +349,37 @@ export function AppRoutes() {
               <AdminRoute permission="announcements.read">
                 <Lazy label="Loading announcements…">
                   <AnnouncementsPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.fastSupport}
+            element={
+              <AdminRoute permission="fastsupport.use">
+                <Lazy label="Loading support…">
+                  <SupportDeskPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path={`${ROUTES.fastSupport}/:id`}
+            element={
+              <AdminRoute permission="fastsupport.use">
+                <Lazy label="Loading the request…">
+                  <SupportSessionPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path={ROUTES.fastSupportModerators}
+            element={
+              <AdminRoute permission="fastsupport.moderators">
+                <Lazy label="Loading moderators…">
+                  <ModeratorsPage />
                 </Lazy>
               </AdminRoute>
             }
