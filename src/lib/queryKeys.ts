@@ -4,6 +4,9 @@ import type { OrganizationListParams } from '@/types/organization';
 
 /** Every TanStack Query key in one place, so invalidation after a mutation can't miss a screen. */
 export const queryKeys = {
+  monitoring: {
+    snapshot: ['monitoring', 'snapshot'] as const,
+  },
   dashboard: {
     stats: ['dashboard', 'stats'] as const,
   },
