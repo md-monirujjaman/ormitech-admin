@@ -24,7 +24,8 @@ import { API_USAGE, AI_USAGE, MESSAGES_VOLUME, ORGANIZATIONS_GROWTH, SUBSCRIPTIO
  */
 const axisTick = { fill: 'var(--muted-foreground)', fontSize: 12 };
 const tooltipStyle = {
-  background: 'var(--popover)',
+  background: 'var(--glass-bg-strong)',
+  backdropFilter: 'blur(16px)',
   border: '1px solid var(--border)',
   borderRadius: 8,
   fontSize: 12,

@@ -19,7 +19,7 @@ import type { PricingConfig, PricingPlan } from '../types';
 
 function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: Array<{ id: T; label: string }>; onChange: (value: T) => void; label: string }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-full border border-border bg-background p-0.5">
+    <div role="radiogroup" aria-label={label} className="glass inline-flex rounded-full border p-0.5">
       {options.map((option) => (
         <button
           key={option.id}

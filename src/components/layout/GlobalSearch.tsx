@@ -84,15 +84,15 @@ export function GlobalSearch() {
 
   return (
     <>
-      <button
+      <button data-variant="field"
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent sm:max-w-sm"
+        className="flex w-full items-center gap-2 rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-muted-foreground shadow-sm transition-colors hover:bg-accent sm:max-w-sm"
         aria-label="Open global search"
       >
         <Search className="size-4 shrink-0" aria-hidden />
         <span className="hidden flex-1 text-left sm:inline">Search organizations, users, leads…</span>
-        <kbd className="ml-auto hidden rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium sm:inline">⌘K</kbd>
+        <kbd className="ml-auto hidden rounded border border-border/60 bg-foreground/5 px-1.5 py-0.5 text-[10px] font-medium sm:inline">⌘K</kbd>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

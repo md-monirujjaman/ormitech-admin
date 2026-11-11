@@ -1,4 +1,5 @@
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import logoLight from '@/assets/auth/ormitech-logo-light.webp';
 import { NavSection } from '@/components/navigation/NavSection';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NAV_SECTIONS } from '@/lib/navigation';
@@ -12,16 +13,17 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'sticky top-0 hidden h-svh shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 lg:flex',
+        'sticky top-0 hidden h-svh shrink-0 flex-col glass-sidebar border-r text-sidebar-foreground transition-[width] duration-200 lg:flex',
         collapsed ? 'w-[72px]' : 'w-64',
       )}
     >
-      <div className={cn('flex h-14 items-center gap-2 border-b border-sidebar-border px-4', collapsed && 'justify-center px-2')}>
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">OT</div>
-        {!collapsed && (
-          <div className="flex flex-col leading-none">
-            <span className="text-sm font-semibold text-sidebar-foreground">OrmiTech</span>
-            <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50">Admin</span>
+      <div className={cn('flex h-14 items-center gap-2 border-b border-white/10 px-4', collapsed && 'justify-center px-2')}>
+        {collapsed ? (
+          <img src="/icons/favicon.svg" alt="OrmiTech" width={32} height={32} className="size-8 shrink-0 rounded-lg" />
+        ) : (
+          <div className="flex min-w-0 items-center gap-2.5">
+            <img src={logoLight} alt="OrmiTech" width={750} height={225} className="h-auto w-[8.5rem] shrink-0 object-contain" />
+            <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/70">Admin</span>
           </div>
         )}
       </div>
@@ -34,11 +36,11 @@ export function Sidebar() {
         </nav>
       </ScrollArea>
 
-      <div className="border-t border-sidebar-border p-2">
+      <div className="border-t border-white/10 p-2">
         <button
           type="button"
           onClick={toggleCollapsed}
-          className="flex w-full items-center justify-center gap-2 rounded-md px-2.5 py-2 text-xs font-medium text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          className="flex w-full items-center justify-center gap-2 rounded-md px-2.5 py-2 text-xs font-medium text-sidebar-foreground/60 transition-colors hover:bg-white/10 hover:text-sidebar-accent-foreground"
         >
           {collapsed ? <ChevronsRight className="size-4" aria-hidden /> : <ChevronsLeft className="size-4" aria-hidden />}
           {!collapsed && 'Collapse'}
