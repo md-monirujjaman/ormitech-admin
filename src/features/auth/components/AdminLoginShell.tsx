@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import heroUrl from '@/assets/auth/admin-hero.webp';
-import logoUrl from '@/assets/auth/ormitech-logo-light.webp';
 
 /**
  * The administrator sign-in screen: a human hand and a robot hand almost touching above the form, on a dark ground.
@@ -19,9 +18,7 @@ export function AdminLoginShell({ title, subtitle, children, footer }: { title: 
       <div aria-hidden className="login-glow pointer-events-none absolute left-1/2 top-[38%] -z-10 h-[34rem] w-[min(90vw,46rem)] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(244,63,94,0.16),rgba(139,92,246,0.12)_55%,transparent)] blur-2xl" />
 
       <header className="login-rise flex flex-col items-center text-center [animation-delay:60ms]">
-        <img src={logoUrl} alt="OrmiTech" width={750} height={225} className="h-auto w-[11.5rem] drop-shadow-[0_6px_28px_rgba(244,63,94,0.35)] sm:w-60" />
-        <p className="mt-3 text-sm font-medium uppercase tracking-[0.18em] text-white/70 sm:text-base">OrmiTech Admin</p>
-        <h1 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
         <p className="mt-1.5 max-w-xs text-xs text-white/60 sm:max-w-none sm:text-[13px]">{subtitle}</p>
       </header>
 
