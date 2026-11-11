@@ -198,7 +198,7 @@ function Editor({ initial }: { initial: BlogPost | null }) {
 
   return (
     <div className="space-y-5">
-      <div className="sticky top-14 z-30 -mx-4 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur lg:-mx-6 lg:px-6">
+      <div className="sticky top-14 z-30 -mx-4 flex flex-wrap items-center justify-between gap-3 glass-header border-b px-4 py-3 lg:-mx-6 lg:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="icon" aria-label="Back to the blog" onClick={goBack}>
             <ArrowLeft className="size-4" aria-hidden />
@@ -504,7 +504,7 @@ function Editor({ initial }: { initial: BlogPost | null }) {
               { label: 'Search', value: score(seo), tab: 'seo' as const },
               { label: 'Answers', value: score(aeo), tab: 'aeo' as const },
             ].map((item) => (
-              <button key={item.label} type="button" onClick={() => setTab(item.tab)} className="rounded-xl border border-border bg-card p-3 text-left hover:bg-muted/40">
+              <button key={item.label} type="button" onClick={() => setTab(item.tab)} className="glass rounded-xl border p-3 text-left hover:bg-muted/40">
                 <span className="text-xs text-muted-foreground">{item.label} score</span>
                 <span className={cn('block text-2xl font-semibold tabular-nums', item.value >= 80 ? 'text-success' : item.value >= 50 ? 'text-warning' : 'text-destructive')}>{item.value}</span>
               </button>

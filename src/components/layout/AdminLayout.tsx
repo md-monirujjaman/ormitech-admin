@@ -11,7 +11,7 @@ export function AdminLayout() {
   const wide = [ROUTES.docs, ROUTES.pricing].some((route) => pathname === route || pathname.startsWith(`${route}/`));
   return (
     <SupportRealtime>
-    <div className="flex min-h-svh bg-muted/30">
+    <div className="glass-app flex min-h-svh">
       <Sidebar />
       <MobileSidebar />
       <div className="flex min-w-0 flex-1 flex-col">

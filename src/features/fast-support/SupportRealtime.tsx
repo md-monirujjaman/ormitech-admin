@@ -35,7 +35,7 @@ export function SupportRealtime({ children }: { children: ReactNode }) {
       {toasts.length > 0 && (
         <div className="fixed bottom-4 right-4 z-50 flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-2" role="status" aria-live="polite">
           {toasts.map((toast) => (
-            <div key={toast.id} className="flex items-start gap-3 rounded-lg border border-border bg-card p-3 shadow-lg">
+            <div key={toast.id} className="flex items-start gap-3 glass-strong rounded-lg border p-3">
               <Bell className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">{toast.text}</p>

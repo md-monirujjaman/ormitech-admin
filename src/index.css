@@ -44,6 +44,19 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #27272a;
   --sidebar-ring: #e10032;
+
+  /* Glass surfaces. Black, white and the brand red only; opacity does the rest. */
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-bg-strong: rgba(255, 255, 255, 0.86);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.75);
+  --glass-shadow: 0 8px 30px -14px rgba(0, 0, 0, 0.22);
+  --glass-hover: rgba(0, 0, 0, 0.045);
+  --glass-field: rgba(255, 255, 255, 0.55);
+  --glass-scrim: rgba(10, 10, 10, 0.38);
+  --glass-page: #f4f4f5;
+  --glass-glow-red: rgba(225, 0, 50, 0.14);
+  --glass-glow-black: rgba(0, 0, 0, 0.07);
 }
 
 .dark {
@@ -86,6 +99,18 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #1f1f23;
   --sidebar-ring: #ff2d55;
+
+  --glass-bg: rgba(24, 24, 27, 0.55);
+  --glass-bg-strong: rgba(16, 16, 19, 0.86);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 10px 40px -14px rgba(0, 0, 0, 0.7);
+  --glass-hover: rgba(255, 255, 255, 0.06);
+  --glass-field: rgba(255, 255, 255, 0.05);
+  --glass-scrim: rgba(0, 0, 0, 0.55);
+  --glass-page: #09090b;
+  --glass-glow-red: rgba(255, 45, 85, 0.13);
+  --glass-glow-black: rgba(255, 255, 255, 0.03);
 }
 
 @theme inline {
@@ -137,6 +162,93 @@
     @apply bg-background text-foreground;
     font-feature-settings: "cv11", "ss01";
   }
+}
+
+
+/*
+ * Glassmorphism for the admin panel. Everything is scoped to `.glass-app` (the signed-in layout) or `[data-glass-surface]` (dialogs,
+ * drawers and menus drawn outside it), so the sign-in and password-reset screens keep their own look.
+ */
+.glass-app {
+  min-height: 100svh;
+  background-color: var(--glass-page);
+  background-image:
+    radial-gradient(60rem 38rem at 88% -12%, var(--glass-glow-red), transparent 62%),
+    radial-gradient(48rem 36rem at -8% 108%, var(--glass-glow-black), transparent 58%);
+  background-attachment: fixed;
+}
+.glass,
+.glass-strong,
+.glass-sidebar,
+.glass-header {
+  -webkit-backdrop-filter: blur(var(--glass-blur, 16px)) saturate(1.5);
+  backdrop-filter: blur(var(--glass-blur, 16px)) saturate(1.5);
+  border-color: var(--glass-border);
+}
+.glass {
+  background: var(--glass-bg);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
+}
+.glass-strong {
+  --glass-blur: 24px;
+  background: var(--glass-bg-strong);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 24px 60px -20px rgba(0, 0, 0, 0.45);
+}
+.glass-header {
+  --glass-blur: 20px;
+  background: var(--glass-bg);
+  box-shadow: inset 0 -1px 0 var(--glass-highlight);
+}
+/* The sidebar stays black: black glass with a white hairline and a faint inner light. */
+.glass-sidebar {
+  --glass-blur: 22px;
+  background: linear-gradient(180deg, rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.82));
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05), 8px 0 40px -24px rgba(0, 0, 0, 0.6);
+}
+.glass-overlay {
+  background: var(--glass-scrim);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+:is(.glass-app, [data-glass-surface]) :is(input:not([type='checkbox'], [type='radio'], [type='file'], [type='range']), textarea, [data-variant='field']) {
+  background-color: var(--glass-field);
+  border-color: var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+:is(.glass-app, [data-glass-surface]) :is(input, textarea):focus-visible {
+  border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+:is(.glass-app, [data-glass-surface]) :is(button[data-variant='outline'], button[data-variant='secondary']) {
+  background-color: var(--glass-field);
+  border-color: var(--glass-border);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+:is(.glass-app, [data-glass-surface]) :is(button[data-variant='outline'], button[data-variant='secondary'], button[data-variant='ghost']):hover {
+  background-color: var(--glass-hover);
+}
+:is(.glass-app, [data-glass-surface]) button[data-variant='default'] {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 18px -8px color-mix(in srgb, var(--primary) 70%, transparent);
+}
+:is(.glass-app, [data-glass-surface]) tbody tr:hover {
+  background-color: var(--glass-hover);
+}
+:is(.glass-app, [data-glass-surface]) thead {
+  background-color: color-mix(in srgb, var(--foreground) 3%, transparent);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .glass-strong, .glass-header, .glass-sidebar, .glass-overlay,
+  :is(.glass-app, [data-glass-surface]) :is(input, textarea, button) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass { background: var(--card); }
+  .glass-strong, .glass-header { background: var(--popover); }
 }
 
 /* The visual (TipTap) documentation editor: typography for the text being written. */

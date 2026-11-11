@@ -1,3 +1,4 @@
+import logoLight from '@/assets/auth/ormitech-logo-light.webp';
 import { NavSection } from '@/components/navigation/NavSection';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { NAV_SECTIONS } from '@/lib/navigation';
@@ -10,11 +11,10 @@ export function MobileSidebar() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent side="left" className="flex w-72 flex-col p-0">
-        <SheetHeader className="h-14 flex-row items-center gap-2 border-b border-sidebar-border px-4">
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">OT</div>
-          <SheetTitle className="flex flex-col items-start leading-none text-sidebar-foreground">
-            <span className="text-sm font-semibold">OrmiTech</span>
-            <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50">Admin</span>
+        <SheetHeader className="h-14 flex-row items-center gap-2 border-b border-white/10 px-4">
+          <SheetTitle className="flex items-center gap-2.5 leading-none text-sidebar-foreground">
+            <img src={logoLight} alt="OrmiTech" width={750} height={225} className="h-auto w-[8.5rem] shrink-0 object-contain" />
+            <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/70">Admin</span>
           </SheetTitle>
         </SheetHeader>
 
