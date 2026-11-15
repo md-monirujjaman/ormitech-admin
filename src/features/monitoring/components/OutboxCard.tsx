@@ -23,6 +23,9 @@ function Tile({ label, value, tone }: { label: string; value: number; tone?: Ton
 export function OutboxCard({ outbox }: { outbox: OutboxMonitoring }) {
   const status = STATUS[outbox.status];
   const { counts } = outbox;
+  // Failed rows are their own finding, not a backlog: shown whatever else is going on, and instead of "Healthy" when they are all there is.
+  const hasFailed = (counts?.failed ?? 0) > 0;
+  const primary = hasFailed && outbox.status === 'ok' ? null : status;
   return (
     <Card>
       <CardHeader className="flex-row items-start justify-between space-y-0">
@@ -32,7 +35,8 @@ export function OutboxCard({ outbox }: { outbox: OutboxMonitoring }) {
         </div>
         <div className="flex flex-wrap justify-end gap-1.5">
           <StatusPill tone={outbox.enabled ? 'ok' : 'muted'}>{outbox.enabled ? 'Enabled' : 'Disabled'}</StatusPill>
-          <StatusPill tone={status.tone}>{status.label}</StatusPill>
+          {primary && <StatusPill tone={primary.tone}>{primary.label}</StatusPill>}
+          {hasFailed && <StatusPill tone="warn">Has failed rows</StatusPill>}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

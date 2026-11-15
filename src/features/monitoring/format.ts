@@ -38,10 +38,10 @@ const ATTENTION_TEXT: Record<string, string> = {
   redis_memory_high: 'Redis memory is nearly at its limit',
   queue_backlog: 'is falling behind',
   queue_failed_jobs: 'has failed jobs',
-  outbox_stuck: 'Some outbox rows are well past the time they should have been picked up',
-  outbox_backlog: 'The outbox is falling behind',
+  outbox_stuck: 'Outbox has stuck rows',
+  outbox_backlog: 'Outbox backlog',
   outbox_unreadable: 'The outbox could not be read',
-  outbox_failed_rows: 'The outbox has failed rows',
+  outbox_failed_rows: 'Outbox has failed rows',
 };
 
 /** One line for a finding the API raised. A code this screen has not heard of is shown as it came, not hidden. */

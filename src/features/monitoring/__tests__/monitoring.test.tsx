@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
@@ -168,7 +168,97 @@ describe('System health with a successful answer', () => {
     expect(await screen.findByText('Enabled')).toBeTruthy();
     expect(screen.getAllByText('Stuck')).toHaveLength(2); // the outbox's status and the stuck-rows flag
     expect(screen.getByText('Oldest pending').nextSibling?.textContent).toBe('1h 6m');
-    expect(screen.getByText('Some outbox rows are well past the time they should have been picked up')).toBeTruthy();
+    expect(screen.getByText('Outbox has stuck rows')).toBeTruthy();
+    expect(screen.getByText('Has failed rows')).toBeTruthy(); // the 2 failed rows are reported next to the stuck ones
+  });
+});
+
+describe('System health: the outbox status and what it says about failed rows', () => {
+  const outboxOf = (status: MonitoringSnapshot['outbox']['status'], counts: Partial<NonNullable<MonitoringSnapshot['outbox']['counts']>>, extra: Partial<MonitoringSnapshot['outbox']> = {}) =>
+    ({ enabled: true, status, counts: { pending: 0, enqueued: 0, processing: 0, failed: 0, done: 110, ...counts }, oldestPendingAgeSeconds: null, stuck: 0, ...extra }) as MonitoringSnapshot['outbox'];
+
+  // The outbox card (title > its wrapper > header > card), because other cards also say "Healthy".
+  const outboxCard = async () => within((await screen.findByText('Job outbox')).parentElement!.parentElement!.parentElement!);
+
+  it('does not call failed rows a backlog: failed only is "Has failed rows", never "Backlog" or "falling behind"', async () => {
+    http.get.mockResolvedValue(ok(snapshot({ needsAttention: true, attention: [{ area: 'outbox', code: 'outbox_failed_rows' }], outbox: outboxOf('ok', { failed: 4 }) })));
+    renderWithClient(<ServerHealth />);
+    expect(await screen.findByText('Outbox has failed rows')).toBeTruthy();
+    const card = await outboxCard();
+    expect(card.getByText('Has failed rows')).toBeTruthy();
+    expect(card.queryByText('Healthy')).toBeNull();
+    expect(screen.queryByText('Backlog')).toBeNull();
+    expect(screen.queryByText(/falling behind/i)).toBeNull();
+    expect(screen.queryByText('Outbox backlog')).toBeNull();
+  });
+
+  it('shows "Backlog" for a real backlog, and both findings when rows also failed', async () => {
+    http.get.mockResolvedValue(
+      ok(
+        snapshot({
+          needsAttention: true,
+          attention: [
+            { area: 'outbox', code: 'outbox_backlog' },
+            { area: 'outbox', code: 'outbox_failed_rows' },
+          ],
+          outbox: outboxOf('backlog', { pending: 3, failed: 2 }, { oldestPendingAgeSeconds: 600 }),
+        }),
+      ),
+    );
+    renderWithClient(<ServerHealth />);
+    expect(await screen.findByText('Outbox backlog')).toBeTruthy();
+    expect(screen.getByText('Outbox has failed rows')).toBeTruthy();
+    expect(screen.getByText('Backlog')).toBeTruthy();
+    expect(screen.getByText('Has failed rows')).toBeTruthy();
+  });
+
+  it('shows "Stuck" with both findings when stuck rows and failed rows coexist', async () => {
+    http.get.mockResolvedValue(
+      ok(
+        snapshot({
+          needsAttention: true,
+          attention: [
+            { area: 'outbox', code: 'outbox_stuck' },
+            { area: 'outbox', code: 'outbox_failed_rows' },
+          ],
+          outbox: outboxOf('stuck', { pending: 2, failed: 1 }, { stuck: 2, oldestPendingAgeSeconds: 4000 }),
+        }),
+      ),
+    );
+    renderWithClient(<ServerHealth />);
+    expect(await screen.findByText('Outbox has stuck rows')).toBeTruthy();
+    expect(screen.getByText('Outbox has failed rows')).toBeTruthy();
+    expect(screen.getAllByText('Stuck').length).toBeGreaterThan(0);
+    expect(screen.getByText('Has failed rows')).toBeTruthy();
+  });
+
+  it('shows "Healthy" and no outbox finding when nothing is wrong', async () => {
+    http.get.mockResolvedValue(ok(snapshot({ outbox: outboxOf('ok', {}) })));
+    renderWithClient(<ServerHealth />);
+    expect((await outboxCard()).getByText('Healthy')).toBeTruthy();
+    expect(screen.queryByText('Has failed rows')).toBeNull();
+    expect(screen.queryByText(/Outbox (backlog|has)/)).toBeNull();
+  });
+
+  it('keeps the failed-rows pill when the outbox is off, and the unavailable state unchanged', async () => {
+    http.get.mockResolvedValue(ok(snapshot({ outbox: outboxOf('off', { failed: 3 }, { enabled: false }) })));
+    const first = renderWithClient(<ServerHealth />);
+    expect(await screen.findByText('Off, nothing waiting')).toBeTruthy();
+    expect(screen.getByText('Has failed rows')).toBeTruthy();
+    first.unmount();
+
+    http.get.mockResolvedValue(ok(snapshot({ needsAttention: true, attention: [{ area: 'outbox', code: 'outbox_unreadable' }], outbox: { enabled: true, status: 'unavailable', counts: null, oldestPendingAgeSeconds: null, stuck: null } })));
+    renderWithClient(<ServerHealth />);
+    expect(await screen.findByText('Unavailable')).toBeTruthy();
+    expect(screen.queryByText('Has failed rows')).toBeNull();
+    expect(screen.getByText('The outbox could not be read')).toBeTruthy();
+  });
+
+  it('copes with an older API that still sends failed rows as a backlog', async () => {
+    http.get.mockResolvedValue(ok(snapshot({ needsAttention: true, attention: [{ area: 'outbox', code: 'outbox_backlog' }], outbox: outboxOf('backlog', { failed: 4 }) })));
+    renderWithClient(<ServerHealth />);
+    expect(await screen.findByText('Outbox backlog')).toBeTruthy();
+    expect(screen.getByText('Has failed rows')).toBeTruthy();
   });
 });
 
