@@ -135,6 +135,8 @@ export interface RoutingPolicy {
   maxAttemptsPerMessage: number;
   intentSlots: Record<string, number>;
   reasoningEfforts: Partial<Record<ModelRole, ReasoningEffort>>;
+  /** The efforts each chosen model accepts, by catalogue model id. A model not listed: not recorded, so no effort is sent to it. */
+  modelEfforts: Record<string, string[]>;
   updatedAt: string;
 }
 
@@ -147,13 +149,18 @@ export interface RoutingModelView {
   capabilities: string[];
   contextWindow: number | null;
   usable: boolean;
+  acceptedEfforts: string[] | null;
+  /** What the policy asks for this role. */
+  requestedEffort: ReasoningEffort;
+  /** What is actually sent (`default`: nothing). */
+  sends: ReasoningEffort;
 }
 
 export interface RoutingOverview {
   environment: { orchestrationEnabled: boolean; maxRetries: number; requestTimeoutMs: number; openrouterKeyPresent: boolean };
   policy: RoutingPolicy;
   models: RoutingModelView[];
-  defaults: { intentSlots: Record<string, number> };
+  defaults: { intentSlots: Record<string, number>; reasoningEfforts: Record<ModelRole, ReasoningEffort> };
   intents: string[];
   effective: { routingActive: boolean };
 }
@@ -166,7 +173,7 @@ export interface RoutingProblem {
 }
 
 export type UpdateRoutingInput = Partial<
-  Pick<RoutingPolicy, 'enabled' | 'routerEnabled' | 'slot1Enabled' | 'slot2Enabled' | 'slot3Enabled' | 'slot4Enabled' | 'maxRetries' | 'requestTimeoutMs' | 'routerTimeoutMs' | 'maxOutputTokens' | 'routerMaxTokens' | 'offtopicConfidence' | 'breakerThreshold' | 'breakerOpenSeconds' | 'maxAttemptsPerMessage' | 'reasoningEfforts' | 'intentSlots'>
+  Pick<RoutingPolicy, 'enabled' | 'routerEnabled' | 'slot1Enabled' | 'slot2Enabled' | 'slot3Enabled' | 'slot4Enabled' | 'maxRetries' | 'requestTimeoutMs' | 'routerTimeoutMs' | 'maxOutputTokens' | 'routerMaxTokens' | 'offtopicConfidence' | 'breakerThreshold' | 'breakerOpenSeconds' | 'maxAttemptsPerMessage' | 'reasoningEfforts' | 'intentSlots' | 'modelEfforts'>
 > & {
   routerModelId?: string | null;
   slot1ModelId?: string | null;

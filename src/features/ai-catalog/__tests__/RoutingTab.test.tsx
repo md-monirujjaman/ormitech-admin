@@ -13,13 +13,13 @@ const policy: RoutingOverview['policy'] = {
   enabled: false, routerModelId: null, routerEnabled: true, slot1ModelId: null, slot2ModelId: null, slot3ModelId: null, slot4ModelId: null,
   slot1Enabled: true, slot2Enabled: true, slot3Enabled: true, slot4Enabled: true, maxRetries: null, requestTimeoutMs: null, routerTimeoutMs: 5000,
   maxOutputTokens: 1200, routerMaxTokens: 160, offtopicConfidence: 0.85, fallbackSlots: [3, 1, 2], breakerThreshold: 3, breakerOpenSeconds: 60,
-  maxAttemptsPerMessage: 6, intentSlots: {}, reasoningEfforts: {}, updatedAt: '2026-11-18T10:00:00.000Z',
+  maxAttemptsPerMessage: 6, intentSlots: {}, reasoningEfforts: {}, modelEfforts: {}, updatedAt: '2026-11-18T10:00:00.000Z',
 };
 const overview = (over: Partial<RoutingOverview> = {}): RoutingOverview => ({
   environment: { orchestrationEnabled: false, maxRetries: 2, requestTimeoutMs: 30000, openrouterKeyPresent: true },
   policy,
   models: [],
-  defaults: { intentSlots: {} },
+  defaults: { intentSlots: {}, reasoningEfforts: { router: 'none', slot1: 'low', slot2: 'minimal', slot3: 'none', slot4: 'none' } },
   intents: ['pricing'],
   effective: { routingActive: false },
   ...over,
@@ -120,5 +120,53 @@ describe('RoutingTab', () => {
     });
     mount();
     expect(await screen.findByText(/routing policy/i)).toBeTruthy();
+  });
+
+  describe('reasoning effort: what is asked for and what is really sent', () => {
+    const withSlot1 = (accepted?: string[], asked?: string) =>
+      serve(overview({ policy: { ...policy, slot1ModelId: 'a', ...(asked ? { reasoningEfforts: { slot1: asked as never } } : {}), modelEfforts: accepted ? { a: accepted } : {} } }));
+
+    it('says what an unset role really asks for, never "provider default" when the API sends something else', async () => {
+      withSlot1();
+      mount();
+      expect(await screen.findByText(/Model 1: Primary/)).toBeTruthy();
+      expect(screen.getByText('Not set: this role asks for “low”.')).toBeTruthy();
+      expect(screen.queryByText(/nothing sent/i)).toBeNull();
+    });
+
+    it('says no effort is sent to a model whose accepted efforts are not recorded', async () => {
+      withSlot1();
+      mount();
+      expect((await screen.findByTestId('slot1-sends')).textContent).toBe('Sends nothing: the efforts this model accepts are not recorded below.');
+    });
+
+    it('shows the effort sent as it is asked for when the model accepts it', async () => {
+      withSlot1(['low', 'medium', 'high']);
+      mount();
+      expect((await screen.findByTestId('slot1-sends')).textContent).toBe('Sends: low.');
+    });
+
+    it('shows the nearest accepted effort when the model does not accept the one asked for (Gemini cannot turn reasoning off)', async () => {
+      withSlot1(['low', 'medium', 'high'], 'none');
+      mount();
+      expect((await screen.findByTestId('slot1-sends')).textContent).toBe('Sends: low (the model does not accept none).');
+    });
+
+    it('records what a model accepts, live, and saves it with the policy', async () => {
+      withSlot1();
+      http.put.mockResolvedValue(ok({ policy: { ...policy, slot1ModelId: 'a', modelEfforts: { a: ['low'] } }, warnings: [] }));
+      mount();
+      await userEvent.click(await screen.findByRole('checkbox', { name: 'Model 1: Primary accepts low' }));
+      expect(screen.getByTestId('slot1-sends').textContent).toBe('Sends: low.');
+      await userEvent.click(screen.getByRole('button', { name: 'Save routing policy' }));
+      await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/routing', { modelEfforts: { a: ['low'] } }));
+    });
+
+    it('shows no accepted-effort boxes for a role with no model', async () => {
+      mount();
+      await screen.findByText(/Model 1: Primary/);
+      expect(screen.queryByRole('checkbox', { name: /accepts/ })).toBeNull();
+      expect(screen.getAllByText('No model chosen.').length).toBe(5);
+    });
   });
 });

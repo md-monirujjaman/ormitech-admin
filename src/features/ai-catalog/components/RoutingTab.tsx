@@ -10,13 +10,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { apiErrorMessage } from '@/lib/apiError';
 import { useAiModels } from '../hooks';
+import { effectiveEffort, EFFORT_SCALE } from '../effort';
 import { useAiRouting, useAiRoutingHealth, useCreateOpenrouter, useUpdateRouting, useValidateRouting } from '../routingHooks';
 import type { AiModel, ModelRole, ReasoningEffort, RoutingPolicy, RoutingProblem, UpdateRoutingInput } from '../types';
 import { LoadFailed } from './LoadFailed';
 import type { Notify } from './notice';
 
 const NONE = '__none__';
-const EFFORTS: ReasoningEffort[] = ['default', 'none', 'minimal', 'low', 'medium', 'high'];
+const EFFORTS: ReasoningEffort[] = ['none', 'minimal', 'low', 'medium', 'high', 'default'];
+const EFFORT_LABEL = (effort: ReasoningEffort) => (effort === 'default' ? 'Nothing (the provider decides)' : effort);
 
 const ROLES: Array<{ role: ModelRole; field: 'routerModelId' | 'slot1ModelId' | 'slot2ModelId' | 'slot3ModelId' | 'slot4ModelId'; enabled: 'routerEnabled' | 'slot1Enabled' | 'slot2Enabled' | 'slot3Enabled' | 'slot4Enabled'; title: string; hint: string }> = [
   { role: 'router', field: 'routerModelId', enabled: 'routerEnabled', title: 'Intent router', hint: 'A small, fast model that reads a message only when the built-in rules cannot place it. Not one of the four slots.' },
@@ -83,6 +85,13 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
   const dirty = Object.keys(draft).length > 0 || JSON.stringify(numbers) !== JSON.stringify(numbersOf(policy));
 
   const efforts = (): Partial<Record<ModelRole, ReasoningEffort>> => ({ ...policy.reasoningEfforts, ...(draft.reasoningEfforts ?? {}) });
+  const accepted = (): Record<string, string[]> => ({ ...policy.modelEfforts, ...(draft.modelEfforts ?? {}) });
+  /** The effort this role asks for: its own setting, else the role's default (which the API really uses, never "nothing"). */
+  const askedFor = (role: ModelRole): ReasoningEffort => efforts()[role] ?? overview.defaults.reasoningEfforts[role];
+  const toggleAccepted = (modelId: string, effort: string) => {
+    const current = accepted()[modelId] ?? [];
+    set({ modelEfforts: { ...accepted(), [modelId]: current.includes(effort) ? current.filter((entry) => entry !== effort) : [...current, effort] } });
+  };
 
   const save = () => {
     const input: UpdateRoutingInput = { ...draft };
@@ -129,7 +138,9 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
       {ROLES.map(({ role, field, enabled, title, hint }) => {
         const chosen = (value(field) as string | null) ?? null;
         const shown = overview.models.find((model) => model.role === role);
-        const effort = efforts()[role] ?? 'default';
+        const effort = askedFor(role);
+        const acceptedList = chosen === null ? null : (accepted()[chosen] ?? null);
+        const sends = effectiveEffort(effort, acceptedList);
         return (
           <Card key={role} className="space-y-3 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -165,7 +176,7 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
                 )}
               </div>
               <div className="space-y-1">
-                <Label htmlFor={`${role}-effort`}>Reasoning effort sent</Label>
+                <Label htmlFor={`${role}-effort`}>Reasoning effort asked for</Label>
                 <Select value={effort} disabled={!canWrite} onValueChange={(next) => set({ reasoningEfforts: { ...efforts(), [role]: next as ReasoningEffort } })}>
                   <SelectTrigger id={`${role}-effort`} aria-label={`${title} reasoning effort`}>
                     <SelectValue />
@@ -173,13 +184,30 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
                   <SelectContent>
                     {EFFORTS.map((entry) => (
                       <SelectItem key={entry} value={entry}>
-                        {entry === 'default' ? 'Provider default (nothing sent)' : entry}
+                        {EFFORT_LABEL(entry)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Supported efforts differ per model; check the model on OpenRouter before choosing.</p>
+                {efforts()[role] === undefined && <p className="text-xs text-muted-foreground">Not set: this role asks for “{overview.defaults.reasoningEfforts[role]}”.</p>}
+                <p className="text-xs" data-testid={`${role}-sends`}>
+                  {chosen === null ? 'No model chosen.' : sends === 'default' ? (acceptedList ? 'Sends nothing: this model accepts none of these efforts.' : 'Sends nothing: the efforts this model accepts are not recorded below.') : sends === effort ? `Sends: ${sends}.` : `Sends: ${sends} (the model does not accept ${effort}).`}
+                </p>
               </div>
+              {chosen !== null && (
+                <div className="space-y-1 sm:col-span-2">
+                  <Label>Reasoning efforts this model accepts</Label>
+                  <div className="flex flex-wrap gap-4">
+                    {EFFORT_SCALE.map((entry) => (
+                      <label key={entry} className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" aria-label={`${title} accepts ${entry}`} disabled={!canWrite} checked={Boolean(acceptedList?.includes(entry))} onChange={() => toggleAccepted(chosen, entry)} />
+                        {entry}
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Copy them from the model's page on OpenRouter. A request never carries an effort that is not ticked here.</p>
+                </div>
+              )}
             </div>
           </Card>
         );
