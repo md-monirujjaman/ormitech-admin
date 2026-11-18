@@ -9,6 +9,7 @@ import { CreditPolicyTab } from '@/features/ai-credits/components/CreditPolicyTa
 import { ModelsTab } from '../components/ModelsTab';
 import { PlanAccessTab } from '../components/PlanAccessTab';
 import { ProvidersTab } from '../components/ProvidersTab';
+import { RoutingTab } from '../components/RoutingTab';
 import type { NoticeTone } from '../components/notice';
 
 const TONE_STYLE: Record<NoticeTone, { box: string; icon: typeof CheckCircle2 }> = {
@@ -75,6 +76,7 @@ export default function AiProvidersPage() {
           <TabsTrigger value="providers">Providers</TabsTrigger>
           <TabsTrigger value="models">Models & pricing</TabsTrigger>
           <TabsTrigger value="access">Plan access</TabsTrigger>
+          <TabsTrigger value="routing">Routing</TabsTrigger>
           {canReadCredits && <TabsTrigger value="credits">Credit policy</TabsTrigger>}
         </TabsList>
         <TabsContent value="providers" className="pt-4">
@@ -85,6 +87,9 @@ export default function AiProvidersPage() {
         </TabsContent>
         <TabsContent value="access" className="pt-4">
           <PlanAccessTab canWrite={canWrite} notify={notify} />
+        </TabsContent>
+        <TabsContent value="routing" className="pt-4">
+          <RoutingTab canWrite={canWrite} notify={notify} />
         </TabsContent>
         {canReadCredits && (
           <TabsContent value="credits" className="pt-4">

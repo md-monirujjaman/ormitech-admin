@@ -22,7 +22,7 @@ export interface AiProvider {
   updatedAt: string;
 }
 
-export type ModelCapability = 'chat' | 'vision' | 'json_output';
+export type ModelCapability = 'chat' | 'vision' | 'json_output' | 'audio';
 
 export interface AiModel {
   id: string;
@@ -103,3 +103,75 @@ export interface SetPricingInput {
   currency: string;
   note: string | null;
 }
+
+// Multi-model routing (`/admin/ai/routing`, ormitech-api migration 0073)
+
+export type ModelRole = 'router' | 'slot1' | 'slot2' | 'slot3' | 'slot4';
+export type ReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'default';
+
+export interface RoutingPolicy {
+  enabled: boolean;
+  routerModelId: string | null;
+  routerEnabled: boolean;
+  slot1ModelId: string | null;
+  slot2ModelId: string | null;
+  slot3ModelId: string | null;
+  slot4ModelId: string | null;
+  slot1Enabled: boolean;
+  slot2Enabled: boolean;
+  slot3Enabled: boolean;
+  slot4Enabled: boolean;
+  /** null: the environment default (AI_MAX_RETRIES). */
+  maxRetries: number | null;
+  /** null: the environment default (AI_REQUEST_TIMEOUT). */
+  requestTimeoutMs: number | null;
+  routerTimeoutMs: number;
+  maxOutputTokens: number;
+  routerMaxTokens: number;
+  offtopicConfidence: number;
+  fallbackSlots: number[];
+  breakerThreshold: number;
+  breakerOpenSeconds: number;
+  maxAttemptsPerMessage: number;
+  intentSlots: Record<string, number>;
+  reasoningEfforts: Partial<Record<ModelRole, ReasoningEffort>>;
+  updatedAt: string;
+}
+
+export interface RoutingModelView {
+  role: ModelRole;
+  modelRowId: string;
+  modelId: string;
+  displayName: string;
+  providerSlug: string;
+  capabilities: string[];
+  contextWindow: number | null;
+  usable: boolean;
+}
+
+export interface RoutingOverview {
+  environment: { orchestrationEnabled: boolean; maxRetries: number; requestTimeoutMs: number; openrouterKeyPresent: boolean };
+  policy: RoutingPolicy;
+  models: RoutingModelView[];
+  defaults: { intentSlots: Record<string, number> };
+  intents: string[];
+  effective: { routingActive: boolean };
+}
+
+export interface RoutingProblem {
+  level: 'error' | 'warning';
+  role: ModelRole | 'policy';
+  code: string;
+  message: string;
+}
+
+export type UpdateRoutingInput = Partial<
+  Pick<RoutingPolicy, 'enabled' | 'routerEnabled' | 'slot1Enabled' | 'slot2Enabled' | 'slot3Enabled' | 'slot4Enabled' | 'maxRetries' | 'requestTimeoutMs' | 'routerTimeoutMs' | 'maxOutputTokens' | 'routerMaxTokens' | 'offtopicConfidence' | 'breakerThreshold' | 'breakerOpenSeconds' | 'maxAttemptsPerMessage' | 'reasoningEfforts' | 'intentSlots'>
+> & {
+  routerModelId?: string | null;
+  slot1ModelId?: string | null;
+  slot2ModelId?: string | null;
+  slot3ModelId?: string | null;
+  slot4ModelId?: string | null;
+  fallbackSlots?: Array<1 | 2 | 3>;
+};

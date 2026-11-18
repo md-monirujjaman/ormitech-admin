@@ -14,8 +14,8 @@ const price = (label: string) =>
     .regex(PRICE, `${label} must be a number with up to 8 decimal places`)
     .refine((value) => !priceTooLarge(value), `${label} cannot be more than 1000000`);
 
-export const CAPABILITIES = ['chat', 'vision', 'json_output'] as const;
-export const CAPABILITY_LABELS: Record<(typeof CAPABILITIES)[number], string> = { chat: 'Chat', vision: 'Vision (reads pictures)', json_output: 'JSON output' };
+export const CAPABILITIES = ['chat', 'vision', 'json_output', 'audio'] as const;
+export const CAPABILITY_LABELS: Record<(typeof CAPABILITIES)[number], string> = { chat: 'Chat', vision: 'Vision (reads pictures)', json_output: 'JSON output', audio: 'Audio (listens to voice messages)' };
 
 /** The same rule the API applies to an address that will receive an API key. The API checks it again. */
 export const providerUrlSchema = z
