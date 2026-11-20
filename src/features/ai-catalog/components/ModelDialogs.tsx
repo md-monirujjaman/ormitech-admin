@@ -96,7 +96,7 @@ export function ModelFormDialog({
         >
           <div className="space-y-1.5">
             <Label htmlFor="model-id">Model id</Label>
-            <Input id="model-id" value={values.modelId} disabled={Boolean(editing)} maxLength={120} autoComplete="off" spellCheck={false} onChange={(event) => setValues((current) => ({ ...current, modelId: event.target.value }))} />
+            <Input id="model-id" value={values.modelId} placeholder="author/model-name" disabled={Boolean(editing)} maxLength={120} autoComplete="off" spellCheck={false} onChange={(event) => setValues((current) => ({ ...current, modelId: event.target.value }))} />
             <Problem>{problems.modelId}</Problem>
           </div>
           <div className="space-y-1.5">
