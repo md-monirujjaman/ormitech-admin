@@ -8,6 +8,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { CreditPolicyTab } from '@/features/ai-credits/components/CreditPolicyTab';
 import { ModelsTab } from '../components/ModelsTab';
 import { ConnectionTab } from '../components/ConnectionTab';
+import { InstructionsTab } from '../components/InstructionsTab';
 import { RoutingTab } from '../components/RoutingTab';
 import type { NoticeTone } from '../components/notice';
 
@@ -56,7 +57,7 @@ export default function AiProvidersPage() {
     <div className="space-y-6">
       <PageHeader
         title="AI gateway & models"
-        description="Every AI request goes to OpenRouter through one key set on the server. Choose which models answer, what they cost and how replies are routed. Every workspace is answered by these models. Every change is recorded in the audit log."
+        description="Every AI request goes to OpenRouter through one key set on the server. Choose which models answer, what they cost, how replies are routed and what instructions they follow. Every workspace is answered by these models. Every change is recorded in the audit log."
         showMockNotice={false}
       />
 
@@ -75,6 +76,7 @@ export default function AiProvidersPage() {
           <TabsTrigger value="connection">Connection</TabsTrigger>
           <TabsTrigger value="models">Models & pricing</TabsTrigger>
           <TabsTrigger value="routing">Routing</TabsTrigger>
+          <TabsTrigger value="instructions">Instructions</TabsTrigger>
           {canReadCredits && <TabsTrigger value="credits">Credit policy</TabsTrigger>}
         </TabsList>
         <TabsContent value="connection" className="pt-4">
@@ -85,6 +87,9 @@ export default function AiProvidersPage() {
         </TabsContent>
         <TabsContent value="routing" className="pt-4">
           <RoutingTab canWrite={canWrite} notify={notify} />
+        </TabsContent>
+        <TabsContent value="instructions" className="pt-4">
+          <InstructionsTab canWrite={canWrite} notify={notify} />
         </TabsContent>
         {canReadCredits && (
           <TabsContent value="credits" className="pt-4">
