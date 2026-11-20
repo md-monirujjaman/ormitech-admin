@@ -1,20 +1,16 @@
 import { Badge } from '@/components/ui/badge';
-import { HEALTH_LABEL, formatWhen } from '../format';
-import type { AiModel, AiProvider } from '../types';
+import { GATEWAY_LABEL, formatWhen } from '../format';
+import type { AiModel, GatewayHealth } from '../types';
 
-const VARIANT = { unknown: 'outline', healthy: 'success', unhealthy: 'warning', unauthorized: 'destructive' } as const;
+const VARIANT = { unchecked: 'outline', healthy: 'success', unhealthy: 'warning', unauthorized: 'destructive', no_key: 'destructive' } as const;
 
-export function HealthBadge({ health }: { health: AiProvider['health'] }) {
-  return (
-    <Badge variant={VARIANT[health.status]} title={health.checkedAt ? `Checked ${formatWhen(health.checkedAt)}` : 'Never checked'}>
-      {HEALTH_LABEL[health.status]}
-    </Badge>
-  );
+export function GatewayBadge({ status }: { status: GatewayHealth | 'unchecked' }) {
+  return <Badge variant={VARIANT[status]}>{GATEWAY_LABEL[status]}</Badge>;
 }
 
 export function VerifiedBadge({ model }: { model: Pick<AiModel, 'availabilityVerifiedAt'> }) {
   return model.availabilityVerifiedAt ? (
-    <Badge variant="success" title={`Confirmed by the provider ${formatWhen(model.availabilityVerifiedAt)}`}>
+    <Badge variant="success" title={`Confirmed with OpenRouter ${formatWhen(model.availabilityVerifiedAt)}`}>
       Verified
     </Badge>
   ) : (

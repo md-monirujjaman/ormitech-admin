@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatPrice, pricesEqual, sameSet } from '../format';
-import { apiKeySchema, createModelSchema, createProviderSchema, credentialsSchema, fieldErrors, pricingSchema, providerUrlSchema, updateProviderSchema } from '../schemas';
+import { createModelSchema, fieldErrors, pricingSchema } from '../schemas';
 
 const pricing = (overrides: Record<string, string> = {}) => ({ inputPerMillion: '0.15', outputPerMillion: '0.6', cachedInputPerMillion: '', currency: 'USD', note: '', ...overrides });
 
@@ -65,69 +65,15 @@ describe('prices are compared and shown without rounding', () => {
   });
 });
 
-describe('provider address validation', () => {
-  it('accepts a public https address on the standard port', () => {
-    for (const value of ['https://api.openai.com/v1', 'https://llm.provider-test.dev', 'https://llm.provider-test.dev:443/v1/']) expect(providerUrlSchema.safeParse(value).success, value).toBe(true);
-  });
-
-  it.each([
-    'http://api.openai.com/v1',
-    'https://localhost/v1',
-    'https://127.0.0.1/v1',
-    'https://[::1]/v1',
-    'https://169.254.169.254/latest',
-    'https://user:secret@api.openai.com/v1',
-    'https://api.openai.com:8443/v1',
-    'https://api.openai.com/v1?key=1',
-    'https://api.openai.com/v1#x',
-    'https://db.internal/v1',
-    'https://printer.local',
-    'https://intranet/v1',
-    'not a url',
-    '',
-  ])('refuses %j before anything is sent', (value) => {
-    expect(providerUrlSchema.safeParse(value).success).toBe(false);
-  });
-});
-
-describe('API key validation', () => {
-  it('needs a plausible key and never repeats it in the message', () => {
-    expect(apiKeySchema.safeParse('sk-test-1234567890abcdefghij').success).toBe(true);
-    for (const value of ['short', 'has a space inside the key 1234567890', 'x'.repeat(401), '']) {
-      const result = credentialsSchema.safeParse({ apiKey: value });
-      expect(result.success, value).toBe(false);
-      if (!result.success && value) expect(JSON.stringify(result.error.issues)).not.toContain(value);
-    }
-  });
-});
-
-describe('provider and model forms', () => {
-  const provider = { slug: 'openai-main', name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', priority: 100, apiKey: '' };
-
-  it('accepts a provider without a key and with one', () => {
-    expect(createProviderSchema.safeParse(provider).success).toBe(true);
-    expect(createProviderSchema.safeParse({ ...provider, apiKey: 'sk-test-1234567890abcdefghij' }).success).toBe(true);
-  });
-
-  it('refuses a bad identifier, name, priority or key', () => {
-    expect(createProviderSchema.safeParse({ ...provider, slug: 'Open AI' }).success).toBe(false);
-    expect(createProviderSchema.safeParse({ ...provider, slug: '-x' }).success).toBe(false);
-    expect(createProviderSchema.safeParse({ ...provider, name: ' ' }).success).toBe(false);
-    expect(createProviderSchema.safeParse({ ...provider, priority: -1 }).success).toBe(false);
-    expect(createProviderSchema.safeParse({ ...provider, priority: 1.5 }).success).toBe(false);
-    expect(createProviderSchema.safeParse({ ...provider, priority: 10001 }).success).toBe(false);
-    expect(createProviderSchema.safeParse({ ...provider, apiKey: 'short' }).success).toBe(false);
-    expect(updateProviderSchema.safeParse({ name: 'x', baseUrl: 'http://x.example.com', priority: 1 }).success).toBe(false);
-  });
-
-  const modelForm = { providerId: 'p', modelId: 'fixture-model-a', displayName: 'Fixture', description: '', contextWindow: '', capabilities: ['chat' as const] };
+describe('model form', () => {
+  const modelForm = { modelId: 'fixture-model-a', displayName: 'Fixture', description: '', contextWindow: '', capabilities: ['chat' as const] };
 
   it('accepts a model and an optional context window', () => {
     expect(createModelSchema.safeParse(modelForm).success).toBe(true);
     expect(createModelSchema.safeParse({ ...modelForm, contextWindow: '128000' }).success).toBe(true);
   });
 
-  it('refuses an id with spaces, a bad context window, no capability or no provider', () => {
+  it('refuses an id with spaces, a bad context window or no capability', () => {
     expect(createModelSchema.safeParse({ ...modelForm, modelId: 'has space' }).success).toBe(false);
     expect(createModelSchema.safeParse({ ...modelForm, modelId: '' }).success).toBe(false);
     expect(createModelSchema.safeParse({ ...modelForm, contextWindow: '0' }).success).toBe(false);
@@ -135,6 +81,6 @@ describe('provider and model forms', () => {
     expect(createModelSchema.safeParse({ ...modelForm, contextWindow: '100000001' }).success).toBe(false);
     expect(createModelSchema.safeParse({ ...modelForm, capabilities: [] }).success).toBe(false);
     expect(createModelSchema.safeParse({ ...modelForm, capabilities: ['telepathy'] }).success).toBe(false);
-    expect(createModelSchema.safeParse({ ...modelForm, providerId: '' }).success).toBe(false);
+    expect(createModelSchema.safeParse({ ...modelForm, capabilities: ['chat', 'audio'] }).success).toBe(true);
   });
 });

@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { axiosClient } from '@/api/axiosClient';
 import { ModelsTab } from '../components/ModelsTab';
 import type { AiModel } from '../types';
-import { apiFailure, model, ok, provider, renderWithClient } from './testUtils';
+import { apiFailure, model, ok, renderWithClient } from './testUtils';
 
-vi.mock('@/api/axiosClient', () => ({ axiosClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn() } }));
-const http = axiosClient as unknown as Record<'get' | 'post' | 'put' | 'patch', Mock>;
+vi.mock('@/api/axiosClient', () => ({ axiosClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() } }));
+const http = axiosClient as unknown as Record<'get' | 'post' | 'put' | 'patch' | 'delete', Mock>;
 
 const ready = model({ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', modelId: 'ready-model', displayName: 'Ready Model', enabled: false });
-const live = model({ id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', modelId: 'live-model', displayName: 'Live Model', enabled: true, isDefault: true, capabilities: ['chat', 'vision'] });
+const live = model({ id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', modelId: 'live-model', displayName: 'Live Model', enabled: true, capabilities: ['chat', 'vision'] });
 const raw = model({
   id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
   modelId: 'raw-model',
@@ -22,7 +22,6 @@ const raw = model({
 
 function serve(models: AiModel[] = [ready, live, raw]) {
   http.get.mockImplementation(async (path: string) => {
-    if (path === '/admin/ai/providers') return ok([provider()]);
     if (path === '/admin/ai/models') return ok(models);
     throw new Error(`unexpected GET ${path}`);
   });
@@ -47,7 +46,6 @@ describe('ModelsTab', () => {
     // 0.15000000 is shown as 0.15: the database padding goes, nothing is rounded.
     expect(row.getByText(/In 0\.15 · Out 0\.6 USD/)).toBeTruthy();
     expect(row.getByText('Verified')).toBeTruthy();
-    expect(row.getByText('Provider default')).toBeTruthy();
     const unpriced = await rowOf('Raw Model');
     expect(unpriced.getByText('Not priced')).toBeTruthy();
     expect(unpriced.getByText('Not verified')).toBeTruthy();
@@ -63,8 +61,8 @@ describe('ModelsTab', () => {
   it('says there are no models, and that none are built in', async () => {
     serve([]);
     mount();
-    expect(await screen.findByText('No models in the catalogue')).toBeTruthy();
-    expect(screen.getByText(/None are built in/)).toBeTruthy();
+    expect(await screen.findByText('No models yet')).toBeTruthy();
+    expect(screen.getByText(/none are built in/)).toBeTruthy();
   });
 
   it('says plainly when the API refuses with 403', async () => {
@@ -76,8 +74,7 @@ describe('ModelsTab', () => {
   it('offers no change to someone who may only read', async () => {
     mount(false);
     await screen.findByText('Live Model');
-    expect(screen.queryByRole('button', { name: /Add model|Verify|Prices|Edit/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Make default' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Add model|Verify|Prices|Edit|Delete/ })).toBeNull();
     expect((screen.getByRole('switch', { name: 'Disable Live Model' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
@@ -97,7 +94,7 @@ describe('ModelsTab', () => {
       await rowOf('Ready Model');
       await userEvent.click(screen.getByRole('switch', { name: 'Enable Ready Model' }));
       const confirm = await screen.findByRole('alertdialog');
-      expect(within(confirm).getByText(/Workspaces on the plans you allow will be answered by this model/)).toBeTruthy();
+      expect(within(confirm).getByText(/It can then answer customers when it is chosen in the Routing tab/)).toBeTruthy();
       expect(http.patch).not.toHaveBeenCalled();
       await userEvent.click(within(confirm).getByRole('button', { name: 'Enable model' }));
       await waitFor(() => expect(http.patch).toHaveBeenCalledWith(`/admin/ai/models/${ready.id}/status`, { enabled: true }));
@@ -105,59 +102,72 @@ describe('ModelsTab', () => {
     });
 
     it('treats disabling as destructive, with the consequence spelled out, and can be cancelled', async () => {
-      http.patch.mockResolvedValue(ok({ ...live, enabled: false, isDefault: false }));
+      http.patch.mockResolvedValue(ok({ ...live, enabled: false }));
       mount();
       await rowOf('Live Model');
       await userEvent.click(screen.getByRole('switch', { name: 'Disable Live Model' }));
       const confirm = await screen.findByRole('alertdialog');
-      expect(within(confirm).getByText(/Workspaces stop being answered by it/)).toBeTruthy();
+      expect(within(confirm).getByText(/It stops answering customers right away if it is in use/)).toBeTruthy();
       await userEvent.click(within(confirm).getByRole('button', { name: 'Cancel' }));
       expect(http.patch).not.toHaveBeenCalled();
     });
 
     it('shows the API’s reason when it refuses, and keeps the question open', async () => {
-      http.patch.mockRejectedValue(apiFailure(409, "Verify the model against the provider's API before enabling it"));
+      http.patch.mockRejectedValue(apiFailure(409, "Verify the model with OpenRouter before enabling it"));
       mount();
       await rowOf('Ready Model');
       await userEvent.click(screen.getByRole('switch', { name: 'Enable Ready Model' }));
       await userEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Enable model' }));
-      expect(await screen.findByText("Verify the model against the provider's API before enabling it")).toBeTruthy();
+      expect(await screen.findByText("Verify the model with OpenRouter before enabling it")).toBeTruthy();
       expect(notify).not.toHaveBeenCalled();
     });
 
-    it('makes an enabled model the provider’s default after confirmation', async () => {
-      http.post.mockResolvedValue(ok({ ...live, isDefault: true }));
-      serve([{ ...ready, enabled: true }, live]);
+    it('deletes a model after confirmation, saying what cannot be deleted', async () => {
+      http.delete.mockResolvedValue(ok({ deleted: true }));
       mount();
-      await rowOf('Ready Model');
-      await userEvent.click(screen.getByRole('button', { name: 'Make default' }));
-      await userEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Make default' }));
-      await waitFor(() => expect(http.post).toHaveBeenCalledWith(`/admin/ai/models/${ready.id}/default`));
+      await rowOf('Raw Model');
+      await userEvent.click(screen.getByRole('button', { name: 'Delete Raw Model' }));
+      const confirm = await screen.findByRole('alertdialog');
+      expect(within(confirm).getByText(/cannot be deleted: switch it off instead/)).toBeTruthy();
+      expect(http.delete).not.toHaveBeenCalled();
+      await userEvent.click(within(confirm).getByRole('button', { name: 'Delete model' }));
+      await waitFor(() => expect(http.delete).toHaveBeenCalledWith(`/admin/ai/models/${raw.id}`));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('Raw Model was deleted.', 'success'));
+    });
+
+    it('shows the API’s reason when a model cannot be deleted, and keeps the question open', async () => {
+      http.delete.mockRejectedValue(apiFailure(409, 'This model is used by the routing policy. Choose another model there first.'));
+      mount();
+      await rowOf('Live Model');
+      await userEvent.click(screen.getByRole('button', { name: 'Delete Live Model' }));
+      await userEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Delete model' }));
+      expect(await screen.findByText('This model is used by the routing policy. Choose another model there first.')).toBeTruthy();
+      expect(notify).not.toHaveBeenCalled();
     });
   });
 
-  describe('verifying with the provider', () => {
+  describe('verifying with OpenRouter', () => {
     const verifyRow = async (name: string) => userEvent.click((await rowOf(name)).getByRole('button', { name: 'Verify' }));
 
-    it('reports a model the provider confirmed', async () => {
+    it('reports a model OpenRouter confirmed', async () => {
       http.post.mockResolvedValue(ok({ model: { ...raw, availabilityVerifiedAt: '2026-11-01T12:00:00.000Z' }, verification: { verified: true, reason: 'available' } }));
       mount();
       await verifyRow('Raw Model');
-      await waitFor(() => expect(notify).toHaveBeenCalledWith('Raw Model: The provider confirmed this key can use the model.', 'success'));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('Raw Model: OpenRouter confirmed the key can use this model.', 'success'));
       expect(http.post).toHaveBeenCalledWith(`/admin/ai/models/${raw.id}/verify`);
     });
 
-    it('warns when the provider does not know the model, and says it was switched off', async () => {
-      http.post.mockResolvedValue(ok({ model: { ...live, enabled: false, isDefault: false, availabilityVerifiedAt: null }, verification: { verified: false, reason: 'not_found' } }));
+    it('warns when OpenRouter does not know the model, and says it was switched off', async () => {
+      http.post.mockResolvedValue(ok({ model: { ...live, enabled: false, availabilityVerifiedAt: null }, verification: { verified: false, reason: 'not_found' } }));
       mount();
       await verifyRow('Live Model');
       await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('It was switched off'), 'warning'));
     });
 
     it.each([
-      ['unauthorized', 'The provider rejected the key'],
+      ['unauthorized', 'OpenRouter rejected the key'],
       ['unreachable', 'Nothing was changed.'],
-      ['no_key', 'no API key yet'],
+      ['no_key', 'OPENROUTER_API_KEY is not set'],
     ] as const)('reports %s as an error', async (reason, text) => {
       http.post.mockResolvedValue(ok({ model: raw, verification: { verified: false, reason } }));
       mount();
@@ -288,7 +298,7 @@ describe('ModelsTab', () => {
       expect(http.post).not.toHaveBeenCalled();
     });
 
-    it('adds a model for the provider, with no price and the chat capability, and says what is still to do', async () => {
+    it('adds a model, with no price and the chat capability, and says what is still to do', async () => {
       http.post.mockResolvedValue(ok(model({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', modelId: 'fixture-new', displayName: 'Fixture New' })));
       mount();
       await screen.findByText('Live Model');
@@ -299,12 +309,12 @@ describe('ModelsTab', () => {
       await userEvent.type(within(dialog).getByLabelText('Context window (tokens, optional)'), '64000');
       await userEvent.click(within(dialog).getByRole('button', { name: 'Add model' }));
       await waitFor(() =>
-        expect(http.post).toHaveBeenCalledWith('/admin/ai/models', { providerId: provider().id, modelId: 'fixture-new', displayName: 'Fixture New', contextWindow: 64000, capabilities: ['chat'] }),
+        expect(http.post).toHaveBeenCalledWith('/admin/ai/models', { modelId: 'fixture-new', displayName: 'Fixture New', contextWindow: 64000, capabilities: ['chat'] }),
       );
       await waitFor(() => expect(notify).toHaveBeenCalledWith('Fixture New was added. Set its prices and verify it before enabling.', 'success'));
     });
 
-    it('edits the display name and context window but not the provider’s model id', async () => {
+    it('edits the display name and context window but not the model id', async () => {
       http.patch.mockResolvedValue(ok({ ...live, displayName: 'Live Renamed', contextWindow: null }));
       mount();
       await rowOf('Live Model');

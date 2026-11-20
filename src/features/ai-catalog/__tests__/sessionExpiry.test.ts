@@ -19,7 +19,7 @@ describe('the AI catalogue and the session', () => {
     const signOut = vi.fn();
     setUnauthorizedHandler(signOut);
     axiosClient.defaults.adapter = answerWith(401);
-    await expect(aiCatalogApi.listProviders()).rejects.toMatchObject({ response: { status: 401 } });
+    await expect(aiCatalogApi.gateway()).rejects.toMatchObject({ response: { status: 401 } });
     expect(signOut).toHaveBeenCalledTimes(1);
   });
 
@@ -39,7 +39,7 @@ describe('the AI catalogue and the session', () => {
     expect(signOut).not.toHaveBeenCalled();
   });
 
-  it('sends the access token with every request, and the key only in the body of the one that sets it', async () => {
+  it('sends the access token with every request, and no key in any of them', async () => {
     const seen: Array<{ url?: string; auth?: string; data?: unknown }> = [];
     axiosClient.defaults.adapter = async (config) => {
       seen.push({ url: config.url, auth: String(config.headers.get('Authorization') ?? ''), data: config.data });
@@ -47,12 +47,11 @@ describe('the AI catalogue and the session', () => {
     };
     const { setAccessToken } = await import('@/api/axiosClient');
     setAccessToken('token-123');
-    await aiCatalogApi.listProviders();
-    await aiCatalogApi.setProviderCredentials('id', 'sk-test-secret-1234567890abcdef');
+    await aiCatalogApi.gateway();
+    await aiCatalogApi.checkGateway();
     setAccessToken(null);
     expect(seen.map((entry) => entry.auth)).toEqual(['Bearer token-123', 'Bearer token-123']);
-    expect(seen[0]?.url).toBe('/admin/ai/providers');
-    expect(seen[1]?.data).toBe('{"apiKey":"sk-test-secret-1234567890abcdef"}');
-    expect(JSON.stringify(seen[0])).not.toContain('sk-test');
+    expect(seen.map((entry) => entry.url)).toEqual(['/admin/ai/gateway', '/admin/ai/gateway/check']);
+    expect(JSON.stringify(seen)).not.toMatch(/sk-|apiKey/);
   });
 });

@@ -1,5 +1,5 @@
 import { axiosClient } from '@/api/axiosClient';
-import type { AiProvider, RoutingOverview, RoutingPolicy, RoutingProblem, UpdateRoutingInput } from './types';
+import type { RoutingOverview, RoutingPolicy, RoutingProblem, UpdateRoutingInput } from './types';
 
 const unwrap = <T>(promise: Promise<{ data: { data: T } }>) => promise.then((response) => response.data.data);
 
@@ -9,5 +9,4 @@ export const aiRoutingApi = {
   update: (input: UpdateRoutingInput) => unwrap<{ policy: RoutingPolicy; warnings: RoutingProblem[] }>(axiosClient.put('/admin/ai/routing', input)),
   validate: () => unwrap<{ ok: boolean; problems: RoutingProblem[] }>(axiosClient.post('/admin/ai/routing/validate')),
   health: () => unwrap<{ breakers: Array<{ modelRowId: string; failures: number; open: boolean; openUntil: string | null }> }>(axiosClient.get('/admin/ai/routing/health')),
-  createOpenrouter: () => unwrap<AiProvider>(axiosClient.post('/admin/ai/routing/openrouter')),
 };

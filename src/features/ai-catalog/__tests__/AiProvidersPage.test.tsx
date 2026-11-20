@@ -7,9 +7,9 @@ import { NAV_SECTIONS } from '@/lib/navigation';
 import { ROUTES } from '@/lib/constants';
 import type { Permission } from '@/types/auth';
 import AiProvidersPage from '../pages/AiProvidersPage';
-import { model, ok, provider, renderWithClient } from './testUtils';
+import { gateway, model, ok, renderWithClient } from './testUtils';
 
-vi.mock('@/api/axiosClient', () => ({ axiosClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn() } }));
+vi.mock('@/api/axiosClient', () => ({ axiosClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() } }));
 const mode = vi.hoisted(() => ({ mock: false }));
 vi.mock('@/api/dataSource', () => ({
   get isMockDataSource() {
@@ -21,58 +21,58 @@ vi.mock('@/hooks/usePermissions', () => ({ usePermissions: () => ({ can: (permis
 vi.mock('@/features/plans/hooks', () => ({ usePlans: () => ({ data: [], isLoading: false, isError: false, error: null, refetch: () => undefined }) }));
 vi.mock('@/components/shared/MockDataNotice', () => ({ MockDataNotice: () => null }));
 
-const http = axiosClient as unknown as Record<'get' | 'post' | 'put' | 'patch', Mock>;
+const http = axiosClient as unknown as Record<'get' | 'post' | 'put' | 'patch' | 'delete', Mock>;
 
 describe('AiProvidersPage', () => {
   beforeEach(() => {
     mode.mock = false;
     granted.list = ['ai_providers.read', 'ai_providers.write'];
-    http.get.mockImplementation(async (path: string) => (path === '/admin/ai/providers' ? ok([provider()]) : path === '/admin/ai/models' ? ok([model()]) : ok([])));
+    http.get.mockImplementation(async (path: string) => (path === '/admin/ai/gateway' ? ok(gateway()) : path === '/admin/ai/models' ? ok([model()]) : ok([])));
   });
 
-  it('shows the three sections and loads the providers first', async () => {
+  it('shows the sections, with the connection first, and no provider or plan-access tab', async () => {
     renderWithClient(<AiProvidersPage />);
-    expect(screen.getByRole('tab', { name: 'Providers' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Connection' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Models & pricing' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Plan access' })).toBeTruthy();
-    expect(await screen.findByText('OpenAI Main')).toBeTruthy();
-    expect(http.get).toHaveBeenCalledWith('/admin/ai/providers');
+    expect(screen.getByRole('tab', { name: 'Routing' })).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'Providers' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Plan access' })).toBeNull();
+    expect(await screen.findByText('https://openrouter.ai/api/v1')).toBeTruthy();
+    expect(http.get).toHaveBeenCalledWith('/admin/ai/gateway');
   });
 
   it('moves between sections and loads each section’s data from the API', async () => {
     renderWithClient(<AiProvidersPage />);
-    await screen.findByText('OpenAI Main');
+    await screen.findByText('https://openrouter.ai/api/v1');
     await userEvent.click(screen.getByRole('tab', { name: 'Models & pricing' }));
     expect(await screen.findByText('Fixture A')).toBeTruthy();
-    await userEvent.click(screen.getByRole('tab', { name: 'Plan access' }));
-    expect(await screen.findByText('No active plans')).toBeTruthy();
     expect(http.get).toHaveBeenCalledWith('/admin/ai/models');
   });
 
-  it('shows a notice after a change, which can be dismissed', async () => {
-    http.post.mockResolvedValue(ok({ provider: provider(), check: { status: 'healthy', error: null } }));
+  it('shows a notice after a connection test, which can be dismissed', async () => {
+    http.post.mockResolvedValue(ok({ gateway: gateway(), check: { status: 'healthy', error: null } }));
     renderWithClient(<AiProvidersPage />);
-    await screen.findByText('OpenAI Main');
-    await userEvent.click(screen.getByRole('button', { name: 'Check connection' }));
-    const notice = await screen.findByRole('status');
-    expect(notice.textContent).toContain('OpenAI Main answered: the key works.');
+    await screen.findByText('https://openrouter.ai/api/v1');
+    await userEvent.click(screen.getByRole('button', { name: 'Test connection' }));
+    const notice = (await screen.findAllByRole('status')).find((node) => node.textContent?.includes('OpenRouter accepted the key.'));
+    expect(notice).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText('OpenRouter accepted the key.', { selector: 'p.flex-1' })).toBeNull();
   });
 
   it('announces an error as an alert, and keeps it until it is dismissed', async () => {
-    http.post.mockResolvedValue(ok({ provider: provider(), check: { status: 'unauthorized', error: 'http_401' } }));
+    http.post.mockResolvedValue(ok({ gateway: gateway(), check: { status: 'unauthorized', error: 'http_401' } }));
     renderWithClient(<AiProvidersPage />);
-    await screen.findByText('OpenAI Main');
-    await userEvent.click(screen.getByRole('button', { name: 'Check connection' }));
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('The provider rejected the key (401).'));
+    await screen.findByText('https://openrouter.ai/api/v1');
+    await userEvent.click(screen.getByRole('button', { name: 'Test connection' }));
+    await waitFor(() => expect(screen.getAllByRole('alert')[0]?.textContent).toContain('OpenRouter rejected the key (401).'));
   });
 
   it('hides every control that changes something from a viewer without write permission', async () => {
     granted.list = ['ai_providers.read'];
     renderWithClient(<AiProvidersPage />);
-    await screen.findByText('OpenAI Main');
-    expect(screen.queryByRole('button', { name: /Add provider|Check connection|Replace key|Edit/ })).toBeNull();
+    await screen.findByText('https://openrouter.ai/api/v1');
+    expect(screen.queryByRole('button', { name: /Test connection/ })).toBeNull();
   });
 
   describe('with the mock data source', () => {
@@ -81,7 +81,7 @@ describe('AiProvidersPage', () => {
       renderWithClient(<AiProvidersPage />);
       expect(screen.getByText('This page needs the live API')).toBeTruthy();
       expect(screen.queryByRole('tab')).toBeNull();
-      expect(document.body.textContent).not.toContain('OpenAI Main');
+      expect(document.body.textContent).not.toContain('openrouter.ai');
       expect(http.get).not.toHaveBeenCalled();
     });
   });

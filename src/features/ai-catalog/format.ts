@@ -1,4 +1,4 @@
-import type { ProviderHealthStatus, VerificationReason } from './types';
+import type { GatewayHealth, VerificationReason } from './types';
 
 const when = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 export const formatWhen = (iso: string | null): string => (iso ? when.format(new Date(iso)) : 'never');
@@ -32,38 +32,38 @@ export function pricesEqual(a: string | null, b: string | null): boolean {
 
 export const sameSet = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && [...a].sort().every((value, index) => value === [...b].sort()[index]);
 
-export const HEALTH_LABEL: Record<ProviderHealthStatus, string> = {
-  unknown: 'Not checked',
-  healthy: 'Healthy',
-  unhealthy: 'Unreachable',
+export const GATEWAY_LABEL: Record<GatewayHealth | 'unchecked', string> = {
+  unchecked: 'Not tested yet',
+  healthy: 'Connected',
   unauthorized: 'Key rejected',
+  unhealthy: 'Unreachable',
+  no_key: 'No key set',
 };
 
 /** What a health code or a verification result means, in words. The API sends a short code, never the provider's message. */
 export const CHECK_ERROR_TEXT: Record<string, string> = {
-  no_key: 'No API key is stored.',
-  url_invalid: 'The stored address is not acceptable.',
-  key_unreadable: 'The stored key could not be opened.',
-  http_401: 'The provider rejected the key (401).',
-  http_403: 'The provider refused the key (403).',
-  network: 'The provider could not be reached.',
-  timeout: 'The provider did not answer in time.',
+  no_key: 'OPENROUTER_API_KEY is not set on the server.',
+  url_invalid: 'OPENROUTER_BASE_URL is not an acceptable address (it must be a public https address).',
+  http_401: 'OpenRouter rejected the key (401).',
+  http_403: 'OpenRouter refused the key (403).',
+  network: 'OpenRouter could not be reached.',
+  timeout: 'OpenRouter did not answer in time.',
   address_not_public: 'The address resolves to a non-public address.',
-  too_large: 'The provider answered with too much data.',
+  too_large: 'OpenRouter answered with too much data.',
 };
 
 export function describeCheckError(code: string | null): string | null {
   if (!code) return null;
   if (CHECK_ERROR_TEXT[code]) return CHECK_ERROR_TEXT[code];
   const http = /^http_(\d{3})$/.exec(code);
-  return http ? `The provider answered with status ${http[1]}.` : 'The check failed.';
+  return http ? `OpenRouter answered with status ${http[1]}.` : 'The check failed.';
 }
 
 export const VERIFICATION_TEXT: Record<VerificationReason, { tone: 'success' | 'warning' | 'error'; text: string }> = {
-  available: { tone: 'success', text: 'The provider confirmed this key can use the model.' },
-  not_found: { tone: 'warning', text: 'The provider does not know this model for this key. It was switched off and can no longer be offered.' },
-  unauthorized: { tone: 'error', text: 'The provider rejected the key, so the model could not be checked.' },
-  unreachable: { tone: 'error', text: 'The provider could not be reached, so the model could not be checked. Nothing was changed.' },
-  no_key: { tone: 'error', text: 'The provider has no API key yet.' },
-  provider_url_invalid: { tone: 'error', text: "The provider's stored address is not acceptable. Edit the provider first." },
+  available: { tone: 'success', text: 'OpenRouter confirmed the key can use this model.' },
+  not_found: { tone: 'warning', text: 'OpenRouter does not know this model. It was switched off and can no longer be offered.' },
+  unauthorized: { tone: 'error', text: 'OpenRouter rejected the key, so the model could not be checked.' },
+  unreachable: { tone: 'error', text: 'OpenRouter could not be reached or no provider serves the model right now, so it could not be checked. Nothing was changed.' },
+  no_key: { tone: 'error', text: 'OPENROUTER_API_KEY is not set on the server.' },
+  provider_url_invalid: { tone: 'error', text: 'OPENROUTER_BASE_URL is not an acceptable address, so nothing was sent.' },
 };

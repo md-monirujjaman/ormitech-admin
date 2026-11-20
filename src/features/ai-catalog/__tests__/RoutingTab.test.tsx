@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { axiosClient } from '@/api/axiosClient';
 import { RoutingTab } from '../components/RoutingTab';
 import type { RoutingOverview } from '../types';
-import { apiFailure, model, ok, provider, renderWithClient } from './testUtils';
+import { apiFailure, model, ok, renderWithClient } from './testUtils';
 
 vi.mock('@/api/axiosClient', () => ({ axiosClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn() } }));
 const http = axiosClient as unknown as Record<'get' | 'post' | 'put' | 'patch', Mock>;
@@ -16,12 +16,13 @@ const policy: RoutingOverview['policy'] = {
   maxAttemptsPerMessage: 6, intentSlots: {}, reasoningEfforts: {}, modelEfforts: {}, updatedAt: '2026-11-18T10:00:00.000Z',
 };
 const overview = (over: Partial<RoutingOverview> = {}): RoutingOverview => ({
-  environment: { orchestrationEnabled: false, maxRetries: 2, requestTimeoutMs: 30000, openrouterKeyPresent: true },
+  gateway: { configured: true, baseUrl: 'https://openrouter.ai/api/v1' },
+  environment: { maxRetries: 2, requestTimeoutMs: 30000 },
   policy,
   models: [],
   defaults: { intentSlots: {}, reasoningEfforts: { router: 'none', slot1: 'low', slot2: 'minimal', slot3: 'none', slot4: 'none' } },
   intents: ['pricing'],
-  effective: { routingActive: false },
+  effective: { gatewayReady: false, routingActive: false },
   ...over,
 });
 
@@ -30,7 +31,6 @@ function serve(data: RoutingOverview = overview()) {
     if (path === '/admin/ai/routing') return ok(data);
     if (path === '/admin/ai/routing/health') return ok({ breakers: [] });
     if (path === '/admin/ai/models') return ok([model({ id: 'a', modelId: 'm-a', displayName: 'Model A', enabled: true })]);
-    if (path === '/admin/ai/providers') return ok([provider()]);
     throw new Error(`unexpected GET ${path}`);
   });
 }
@@ -45,11 +45,11 @@ describe('RoutingTab', () => {
     serve();
   });
 
-  it('says plainly that routing is not active and why, with the environment switch', async () => {
+  it('says plainly that routing is not active, that Model 1 answers everything meanwhile, and whether the gateway is ready', async () => {
     mount();
     expect(await screen.findByText('Routing is not active')).toBeTruthy();
-    expect(screen.getByText(/Environment switch off/)).toBeTruthy();
-    expect(screen.getByText(/exactly as before/)).toBeTruthy();
+    expect(screen.getByText('No Model 1: the AI is off')).toBeTruthy();
+    expect(screen.getByText(/every AI request is answered by Model 1/)).toBeTruthy();
     expect(screen.getByText(/Technical fallback never uses Model 4/)).toBeTruthy();
   });
 
@@ -87,27 +87,25 @@ describe('RoutingTab', () => {
     expect(screen.getByText('Unsaved changes')).toBeTruthy();
   });
 
-  it('checks the policy against the catalogue and lists errors and warnings', async () => {
+  it('checks the configuration and lists errors and warnings', async () => {
     http.post.mockResolvedValue(ok({ ok: false, problems: [{ level: 'error', role: 'slot2', code: 'slot2_no_vision', message: 'x/y is not marked as able to see pictures (vision), which slot 2 is for.' }, { level: 'warning', role: 'router', code: 'missing_router', message: 'No router model is set.' }] }));
     mount();
-    await userEvent.click(await screen.findByRole('button', { name: /Check against the catalogue/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /Check the configuration/ }));
     expect(await screen.findByText(/not marked as able to see pictures/)).toBeTruthy();
     expect(screen.getByText(/No router model is set/)).toBeTruthy();
   });
 
-  it('creates the OpenRouter provider from the environment key, without ever showing a key', async () => {
-    http.post.mockResolvedValue(ok(provider({ slug: 'openrouter' })));
+  it('says plainly whether the gateway is ready, and never shows a key', async () => {
+    serve(overview({ gateway: { configured: false, baseUrl: 'https://openrouter.ai/api/v1' } }));
     mount();
-    await userEvent.click(await screen.findByRole('button', { name: /Create the OpenRouter provider/ }));
-    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/admin/ai/routing/openrouter'));
-    expect(screen.getByText(/stored encrypted and never shown/)).toBeTruthy();
+    expect(await screen.findByText('No key set: the AI is off')).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/sk-/);
+    expect(screen.queryByRole('button', { name: /Create the OpenRouter provider/ })).toBeNull();
   });
 
-  it('hides the create button when the environment has no key, and every control is read-only without write permission', async () => {
-    serve(overview({ environment: { orchestrationEnabled: true, maxRetries: 2, requestTimeoutMs: 30000, openrouterKeyPresent: false } }));
+  it('every control is read-only without write permission', async () => {
     const first = mount(false);
     expect(await screen.findByText('Routing is not active')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /Create the OpenRouter provider/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Save routing policy' })).toBeNull();
     expect((screen.getByRole('switch', { name: 'Routing enabled' }) as HTMLButtonElement).disabled).toBe(true);
     first.unmount();
