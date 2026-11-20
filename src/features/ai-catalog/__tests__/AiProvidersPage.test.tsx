@@ -35,6 +35,7 @@ describe('AiProvidersPage', () => {
     expect(screen.getByRole('tab', { name: 'Connection' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Models & pricing' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Routing' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Instructions' })).toBeTruthy();
     expect(screen.queryByRole('tab', { name: 'Providers' })).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Plan access' })).toBeNull();
     expect(await screen.findByText('https://openrouter.ai/api/v1')).toBeTruthy();
