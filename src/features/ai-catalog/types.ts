@@ -79,6 +79,7 @@ export interface SetPricingInput {
 // Multi-model routing (`/admin/ai/routing`, ormitech-api migration 0073)
 
 export type ModelRole = 'router' | 'slot1' | 'slot2' | 'slot3' | 'slot4';
+export type InstructionKey = 'main' | 'router' | 'slot1' | 'slot2' | 'slot3' | 'slot4';
 export type ReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'default';
 
 export interface RoutingPolicy {
@@ -109,6 +110,8 @@ export interface RoutingPolicy {
   reasoningEfforts: Partial<Record<ModelRole, ReasoningEffort>>;
   /** The efforts each chosen model accepts, by catalogue model id. A model not listed: not recorded, so no effort is sent to it. */
   modelEfforts: Record<string, string[]>;
+  /** The platform instructions the super admin wrote. A key that was never written, or was cleared, is absent. */
+  instructions?: Partial<Record<InstructionKey, string>>;
   updatedAt: string;
 }
 
@@ -136,6 +139,8 @@ export interface RoutingOverview {
   models: RoutingModelView[];
   defaults: { intentSlots: Record<string, number>; reasoningEfforts: Record<ModelRole, ReasoningEffort> };
   intents: string[];
+  /** The longest a main instruction and a role instruction may be. */
+  instructionLimits?: { main: number; role: number };
   effective: { gatewayReady: boolean; routingActive: boolean };
 }
 
@@ -155,4 +160,6 @@ export type UpdateRoutingInput = Partial<
   slot3ModelId?: string | null;
   slot4ModelId?: string | null;
   fallbackSlots?: Array<1 | 2 | 3>;
+  /** Only the keys sent change; an empty text clears one. */
+  instructions?: Partial<Record<InstructionKey, string>>;
 };

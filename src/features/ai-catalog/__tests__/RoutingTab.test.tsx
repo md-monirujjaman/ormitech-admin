@@ -70,6 +70,63 @@ describe('RoutingTab', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Routing policy saved.', 'success'));
   });
 
+  describe('platform instructions', () => {
+    const BOXES = ['Main instruction', 'Instruction for the intent router', 'Instruction for Model 1: Primary', 'Instruction for Model 2: Images and voice', 'Instruction for Model 3: Specialist', 'Instruction for Model 4: Off-topic'];
+
+    it('shows a main box and one box per role, each with a placeholder saying what belongs in it, and says the safety rules win', async () => {
+      mount();
+      for (const name of BOXES) {
+        const box = (await screen.findByLabelText(name)) as HTMLTextAreaElement;
+        expect(box.placeholder.length).toBeGreaterThan(20);
+        expect(box.value).toBe('');
+      }
+      expect(screen.getByText(/fixed safety rules \(which cannot be changed here and always win\)/)).toBeTruthy();
+      expect(screen.getByText(/The workspace keeps its single instruction box/)).toBeTruthy();
+      expect((screen.getByLabelText('Main instruction') as HTMLTextAreaElement).maxLength).toBe(4000);
+      expect((screen.getByLabelText('Instruction for Model 1: Primary') as HTMLTextAreaElement).maxLength).toBe(2000);
+    });
+
+    it('shows what is saved and sends only the boxes that were edited', async () => {
+      serve(overview({ policy: { ...policy, instructions: { main: 'Be warm.', slot1: 'Be brief.' } } }));
+      http.put.mockResolvedValue(ok({ policy: { ...policy, instructions: { main: 'Be warm.', slot1: 'Be brief.', slot3: 'Stay calm.' } }, warnings: [] }));
+      mount();
+      expect(((await screen.findByLabelText('Main instruction')) as HTMLTextAreaElement).value).toBe('Be warm.');
+      expect((screen.getByLabelText('Instruction for Model 1: Primary') as HTMLTextAreaElement).value).toBe('Be brief.');
+      await userEvent.type(screen.getByLabelText('Instruction for Model 3: Specialist'), 'Stay calm.');
+      expect(screen.getByText('Unsaved changes')).toBeTruthy();
+      await userEvent.click(screen.getByRole('button', { name: 'Save routing policy' }));
+      await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/routing', { instructions: { slot3: 'Stay calm.' } }));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('Routing policy saved.', 'success'));
+    });
+
+    it('clears an instruction by sending an empty text', async () => {
+      serve(overview({ policy: { ...policy, instructions: { slot2: 'Read the label first.' } } }));
+      http.put.mockResolvedValue(ok({ policy, warnings: [] }));
+      mount();
+      await userEvent.clear(await screen.findByLabelText('Instruction for Model 2: Images and voice'));
+      await userEvent.click(screen.getByRole('button', { name: 'Save routing policy' }));
+      await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/routing', { instructions: { slot2: '' } }));
+    });
+
+    it('counts the characters, and is read-only without write permission', async () => {
+      serve(overview({ policy: { ...policy, instructions: { main: 'abc' } } }));
+      const first = mount(false);
+      const box = (await screen.findByLabelText('Main instruction')) as HTMLTextAreaElement;
+      expect(box.disabled).toBe(true);
+      expect(screen.getByText(/3 \/ 4,000 characters/)).toBeTruthy();
+      first.unmount();
+    });
+
+    it('shows the API’s refusal of an instruction and keeps the draft', async () => {
+      http.put.mockRejectedValue(apiFailure(400, 'Validation failed', [{ field: 'instructions.main', messages: ['must be at most 4000 characters'] }]));
+      mount();
+      await userEvent.type(await screen.findByLabelText('Main instruction'), 'x');
+      await userEvent.click(screen.getByRole('button', { name: 'Save routing policy' }));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.any(String), 'error'));
+      expect(screen.getByText('Unsaved changes')).toBeTruthy();
+    });
+  });
+
   it('turns routing on with the platform switch', async () => {
     http.put.mockResolvedValue(ok({ policy: { ...policy, enabled: true }, warnings: [] }));
     mount();
@@ -127,7 +184,7 @@ describe('RoutingTab', () => {
     it('says what an unset role really asks for, never "provider default" when the API sends something else', async () => {
       withSlot1();
       mount();
-      expect(await screen.findByText(/Model 1: Primary/)).toBeTruthy();
+      expect(await screen.findByText('Model 1: Primary')).toBeTruthy();
       expect(screen.getByText('Not set: this role asks for “low”.')).toBeTruthy();
       expect(screen.queryByText(/nothing sent/i)).toBeNull();
     });
@@ -162,7 +219,7 @@ describe('RoutingTab', () => {
 
     it('shows no accepted-effort boxes for a role with no model', async () => {
       mount();
-      await screen.findByText(/Model 1: Primary/);
+      await screen.findByText('Model 1: Primary');
       expect(screen.queryByRole('checkbox', { name: /accepts/ })).toBeNull();
       expect(screen.getAllByText('No model chosen.').length).toBe(5);
     });
