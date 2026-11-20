@@ -59,7 +59,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Plans', href: ROUTES.plans, icon: Package, permission: 'plans.read' },
       { label: 'Features', href: ROUTES.features, icon: Sparkles, permission: 'features.read' },
       { label: 'AI Configuration', href: ROUTES.ai, icon: Bot, permission: 'ai.read' },
-      { label: 'AI Providers & Models', href: ROUTES.aiProviders, icon: BrainCircuit, permission: 'ai_providers.read' },
+      { label: 'AI Gateway & Models', href: ROUTES.aiProviders, icon: BrainCircuit, permission: 'ai_providers.read' },
       { label: 'Channels', href: ROUTES.channels, icon: Radio, permission: 'channels.read' },
     ],
   },
@@ -135,7 +135,7 @@ export function findNavMeta(pathname: string): { title: string; section: string 
   for (const section of NAV_SECTIONS) {
     for (const item of section.items) {
       if (!(pathname === item.href || pathname.startsWith(`${item.href}/`))) continue;
-      // The most specific item wins: /ai/providers belongs to "AI Providers & Models", not to /ai.
+      // The most specific item wins: /ai/providers belongs to "AI Gateway & Models", not to /ai.
       if (!best || item.href.length > best.length) best = { title: item.label, section: section.label === 'Overview' ? null : section.label, length: item.href.length };
     }
   }

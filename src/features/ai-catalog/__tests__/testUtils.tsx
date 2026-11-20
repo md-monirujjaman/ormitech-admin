@@ -3,7 +3,7 @@ import { render } from '@testing-library/react';
 import { AxiosError, type AxiosResponse } from 'axios';
 import type { ReactElement } from 'react';
 import { vi } from 'vitest';
-import type { AiModel, AiProvider } from '../types';
+import type { AiGateway, AiModel } from '../types';
 
 /** A fresh query client per test, with no retries, so a failed request is a failed request. */
 export function renderWithClient(ui: ReactElement) {
@@ -11,27 +11,17 @@ export function renderWithClient(ui: ReactElement) {
   return { client, ...render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>) };
 }
 
-export const provider = (overrides: Partial<AiProvider> = {}): AiProvider => ({
-  id: '11111111-1111-4111-8111-111111111111',
-  slug: 'openai-main',
-  name: 'OpenAI Main',
-  type: 'openai',
-  baseUrl: 'https://llm.provider-test.dev/v1',
-  enabled: true,
-  isDefault: true,
-  priority: 10,
-  credential: { configured: true, mask: '••••ZZ99', updatedAt: '2026-11-01T10:00:00.000Z' },
-  health: { status: 'healthy', checkedAt: '2026-11-01T10:05:00.000Z', error: null },
-  modelCount: 1,
-  createdAt: '2026-10-01T10:00:00.000Z',
-  updatedAt: '2026-11-01T10:05:00.000Z',
+export const gateway = (overrides: Partial<AiGateway> = {}): AiGateway => ({
+  configured: true,
+  baseUrl: 'https://openrouter.ai/api/v1',
+  keyMask: '••••ZZ99',
+  providerId: '11111111-1111-4111-8111-111111111111',
   ...overrides,
 });
 
 export const model = (overrides: Partial<AiModel> = {}): AiModel => ({
   id: '22222222-2222-4222-8222-222222222222',
-  providerId: '11111111-1111-4111-8111-111111111111',
-  providerSlug: 'openai-main',
+  providerSlug: 'openrouter',
   modelId: 'fixture-model-a',
   displayName: 'Fixture A',
   description: 'A model typed in by an administrator',
@@ -39,9 +29,7 @@ export const model = (overrides: Partial<AiModel> = {}): AiModel => ({
   contextWindow: 128000,
   capabilities: ['chat'],
   enabled: false,
-  isDefault: false,
   availabilityVerifiedAt: '2026-11-01T09:30:00.000Z',
-  planSlugs: [],
   createdAt: '2026-10-01T10:00:00.000Z',
   updatedAt: '2026-11-01T09:30:00.000Z',
   ...overrides,

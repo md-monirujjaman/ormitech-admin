@@ -1,32 +1,27 @@
 /**
  * The shapes `ormitech-api` answers with for `/admin/ai/...` (see ormitech-api `AdminAiCatalogService`). Nothing here
- * is a secret: the API never returns an API key, only whether one is stored and a mask of its last four characters.
+ * is a secret: the API key lives in the server environment and is never returned, only whether one is set and its last four characters.
  */
 
-export type ProviderHealthStatus = 'unknown' | 'healthy' | 'unhealthy' | 'unauthorized';
-
-export interface AiProvider {
-  id: string;
-  slug: string;
-  name: string;
-  type: string;
+/** The AI gateway: where AI requests go. The key lives in the server environment and is never here, only whether one is set and its last four characters. */
+export interface AiGateway {
+  configured: boolean;
   baseUrl: string;
-  enabled: boolean;
-  isDefault: boolean;
-  /** Lower is tried first. */
-  priority: number;
-  credential: { configured: boolean; mask: string | null; updatedAt: string | null };
-  health: { status: ProviderHealthStatus; checkedAt: string | null; error: string | null };
-  modelCount: number;
-  createdAt: string;
-  updatedAt: string;
+  keyMask: string | null;
+  providerId: string | null;
+}
+
+export type GatewayHealth = 'healthy' | 'unauthorized' | 'unhealthy' | 'no_key';
+
+export interface GatewayCheckResult {
+  gateway: AiGateway;
+  check: { status: GatewayHealth; error: string | null };
 }
 
 export type ModelCapability = 'chat' | 'vision' | 'json_output' | 'audio';
 
 export interface AiModel {
   id: string;
-  providerId: string;
   providerSlug: string;
   /** The provider's own id for the model. */
   modelId: string;
@@ -44,16 +39,9 @@ export interface AiModel {
   contextWindow: number | null;
   capabilities: ModelCapability[];
   enabled: boolean;
-  isDefault: boolean;
   availabilityVerifiedAt: string | null;
-  planSlugs: string[];
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ProviderCheckResult {
-  provider: AiProvider;
-  check: { status: 'healthy' | 'unhealthy' | 'unauthorized'; error: string | null };
 }
 
 export type VerificationReason = 'available' | 'not_found' | 'unauthorized' | 'unreachable' | 'no_key' | 'provider_url_invalid';
@@ -65,23 +53,7 @@ export interface ModelVerificationResult {
 
 // Inputs
 
-export interface CreateProviderInput {
-  slug: string;
-  name: string;
-  baseUrl?: string;
-  priority?: number;
-  /** Sent once and never kept: the API stores it encrypted and does not return it. */
-  apiKey?: string;
-}
-
-export interface UpdateProviderInput {
-  name?: string;
-  baseUrl?: string;
-  priority?: number;
-}
-
 export interface CreateModelInput {
-  providerId: string;
   modelId: string;
   displayName: string;
   description?: string;
@@ -107,6 +79,7 @@ export interface SetPricingInput {
 // Multi-model routing (`/admin/ai/routing`, ormitech-api migration 0073)
 
 export type ModelRole = 'router' | 'slot1' | 'slot2' | 'slot3' | 'slot4';
+export type InstructionKey = 'main' | 'router' | 'slot1' | 'slot2' | 'slot3' | 'slot4';
 export type ReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'default';
 
 export interface RoutingPolicy {
@@ -137,6 +110,8 @@ export interface RoutingPolicy {
   reasoningEfforts: Partial<Record<ModelRole, ReasoningEffort>>;
   /** The efforts each chosen model accepts, by catalogue model id. A model not listed: not recorded, so no effort is sent to it. */
   modelEfforts: Record<string, string[]>;
+  /** The platform instructions the super admin wrote. A key that was never written, or was cleared, is absent. */
+  instructions?: Partial<Record<InstructionKey, string>>;
   updatedAt: string;
 }
 
@@ -157,12 +132,16 @@ export interface RoutingModelView {
 }
 
 export interface RoutingOverview {
-  environment: { orchestrationEnabled: boolean; maxRetries: number; requestTimeoutMs: number; openrouterKeyPresent: boolean };
+  /** Where requests go: whether the key is set in the server environment, and the address. Never the key. */
+  gateway: { configured: boolean; baseUrl: string };
+  environment: { maxRetries: number; requestTimeoutMs: number };
   policy: RoutingPolicy;
   models: RoutingModelView[];
   defaults: { intentSlots: Record<string, number>; reasoningEfforts: Record<ModelRole, ReasoningEffort> };
   intents: string[];
-  effective: { routingActive: boolean };
+  /** The longest a main instruction and a role instruction may be. */
+  instructionLimits?: { main: number; role: number };
+  effective: { gatewayReady: boolean; routingActive: boolean };
 }
 
 export interface RoutingProblem {
@@ -181,4 +160,6 @@ export type UpdateRoutingInput = Partial<
   slot3ModelId?: string | null;
   slot4ModelId?: string | null;
   fallbackSlots?: Array<1 | 2 | 3>;
+  /** Only the keys sent change; an empty text clears one. */
+  instructions?: Partial<Record<InstructionKey, string>>;
 };

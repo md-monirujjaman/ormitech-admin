@@ -7,8 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermissions } from '@/hooks/usePermissions';
 import { CreditPolicyTab } from '@/features/ai-credits/components/CreditPolicyTab';
 import { ModelsTab } from '../components/ModelsTab';
-import { PlanAccessTab } from '../components/PlanAccessTab';
-import { ProvidersTab } from '../components/ProvidersTab';
+import { ConnectionTab } from '../components/ConnectionTab';
 import { RoutingTab } from '../components/RoutingTab';
 import type { NoticeTone } from '../components/notice';
 
@@ -19,9 +18,9 @@ const TONE_STYLE: Record<NoticeTone, { box: string; icon: typeof CheckCircle2 }>
 };
 
 /**
- * AI providers, the model catalogue, prices and which plans may use each model. Super admins only: the API enforces it,
+ * The AI gateway: its connection, the models, their prices and which model does what. Super admins only: the API enforces it,
  * and this page only hides what it would refuse. Nothing is shown from mock data: with the mock data source it asks for
- * the live API instead of inventing providers.
+ * the live API instead of inventing models.
  */
 export default function AiProvidersPage() {
   const { can } = usePermissions();
@@ -41,11 +40,11 @@ export default function AiProvidersPage() {
   if (isMockDataSource) {
     return (
       <div className="space-y-6">
-        <PageHeader title="AI providers & models" description="Providers, keys, models, prices and plan access." showMockNotice={false} />
+        <PageHeader title="AI gateway & models" description="The OpenRouter connection, models, prices and routing." showMockNotice={false} />
         <EmptyState
           icon={Plug}
           title="This page needs the live API"
-          description="Providers and keys are real platform configuration, so nothing is shown from mock data. Set VITE_ADMIN_DATA_SOURCE=api and sign in to a real super admin account."
+          description="The gateway and its models are real platform configuration, so nothing is shown from mock data. Set VITE_ADMIN_DATA_SOURCE=api and sign in to a real super admin account."
         />
       </div>
     );
@@ -56,8 +55,8 @@ export default function AiProvidersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="AI providers & models"
-        description="Which provider answers customers, its encrypted key, the models it may serve, what they cost and which plans may use them. Every change is recorded in the audit log."
+        title="AI gateway & models"
+        description="Every AI request goes to OpenRouter through one key set on the server. Choose which models answer, what they cost and how replies are routed. Every workspace is answered by these models. Every change is recorded in the audit log."
         showMockNotice={false}
       />
 
@@ -71,22 +70,18 @@ export default function AiProvidersPage() {
         </div>
       )}
 
-      <Tabs defaultValue="providers">
+      <Tabs defaultValue="connection">
         <TabsList>
-          <TabsTrigger value="providers">Providers</TabsTrigger>
+          <TabsTrigger value="connection">Connection</TabsTrigger>
           <TabsTrigger value="models">Models & pricing</TabsTrigger>
-          <TabsTrigger value="access">Plan access</TabsTrigger>
           <TabsTrigger value="routing">Routing</TabsTrigger>
           {canReadCredits && <TabsTrigger value="credits">Credit policy</TabsTrigger>}
         </TabsList>
-        <TabsContent value="providers" className="pt-4">
-          <ProvidersTab canWrite={canWrite} notify={notify} />
+        <TabsContent value="connection" className="pt-4">
+          <ConnectionTab canWrite={canWrite} notify={notify} />
         </TabsContent>
         <TabsContent value="models" className="pt-4">
           <ModelsTab canWrite={canWrite} notify={notify} />
-        </TabsContent>
-        <TabsContent value="access" className="pt-4">
-          <PlanAccessTab canWrite={canWrite} notify={notify} />
         </TabsContent>
         <TabsContent value="routing" className="pt-4">
           <RoutingTab canWrite={canWrite} notify={notify} />

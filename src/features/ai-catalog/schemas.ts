@@ -17,68 +17,11 @@ const price = (label: string) =>
 export const CAPABILITIES = ['chat', 'vision', 'json_output', 'audio'] as const;
 export const CAPABILITY_LABELS: Record<(typeof CAPABILITIES)[number], string> = { chat: 'Chat', vision: 'Vision (reads pictures)', json_output: 'JSON output', audio: 'Audio (listens to voice messages)' };
 
-/** The same rule the API applies to an address that will receive an API key. The API checks it again. */
-export const providerUrlSchema = z
-  .string()
-  .trim()
-  .max(200, 'The address is too long')
-  .superRefine((value, context) => {
-    let url: URL;
-    try {
-      url = new URL(value);
-    } catch {
-      return context.addIssue({ code: 'custom', message: 'Enter a full address such as https://api.openai.com/v1' });
-    }
-    if (url.protocol !== 'https:') return context.addIssue({ code: 'custom', message: 'The address must use https' });
-    if (url.username || url.password) return context.addIssue({ code: 'custom', message: 'The address must not contain a user name or password' });
-    if (url.search || url.hash) return context.addIssue({ code: 'custom', message: 'The address must not contain a query or a fragment' });
-    if (url.port && url.port !== '443') return context.addIssue({ code: 'custom', message: 'Use the standard https port' });
-    const host = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
-    const isAddress = /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.includes(':');
-    if (isAddress || !host.includes('.') || host === 'localhost' || /\.(local|localhost|internal|intranet|lan|home|corp|test|example|invalid)$/.test(host)) {
-      context.addIssue({ code: 'custom', message: 'Use a public host name, not an IP address or an internal name' });
-    }
-  });
-
-export const apiKeySchema = z
-  .string()
-  .trim()
-  .regex(/^[\x21-\x7E]{20,400}$/, 'An API key is 20 to 400 characters without spaces');
-
-const priority = z
-  .number({ invalid_type_error: 'Priority must be a number' })
-  .int('Priority must be a whole number')
-  .min(0, 'Priority cannot be negative')
-  .max(10_000, 'Priority cannot be more than 10000');
-
-export const createProviderSchema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .min(1, 'Enter an identifier')
-    .max(40)
-    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Use lower-case letters, digits and single hyphens, for example openai-main'),
-  name: z.string().trim().min(1, 'Enter a name').max(80),
-  baseUrl: providerUrlSchema,
-  priority,
-  /** Optional here; a provider cannot be switched on until it has one. */
-  apiKey: z.union([apiKeySchema, z.literal('')]),
-});
-
-export const updateProviderSchema = z.object({
-  name: z.string().trim().min(1, 'Enter a name').max(80),
-  baseUrl: providerUrlSchema,
-  priority,
-});
-
-export const credentialsSchema = z.object({ apiKey: apiKeySchema });
-
 export const createModelSchema = z.object({
-  providerId: z.string().min(1, 'Choose a provider'),
   modelId: z
     .string()
     .trim()
-    .min(1, "Enter the provider's model id")
+    .min(1, "Enter OpenRouter's model id, for example vendor/model-name")
     .max(120)
     .regex(/^[A-Za-z0-9][A-Za-z0-9._:/-]*$/, 'Use only letters, digits and . _ : / -'),
   displayName: z.string().trim().min(1, 'Enter a display name').max(100),
@@ -87,7 +30,7 @@ export const createModelSchema = z.object({
   capabilities: z.array(z.enum(CAPABILITIES)).min(1, 'Choose at least one capability'),
 });
 
-export const updateModelSchema = createModelSchema.omit({ providerId: true, modelId: true });
+export const updateModelSchema = createModelSchema.omit({ modelId: true });
 
 export const pricingSchema = z
   .object({
@@ -99,8 +42,6 @@ export const pricingSchema = z
   })
   .strict();
 
-export type CreateProviderForm = z.infer<typeof createProviderSchema>;
-export type UpdateProviderForm = z.infer<typeof updateProviderSchema>;
 export type CreateModelForm = z.infer<typeof createModelSchema>;
 export type UpdateModelForm = z.infer<typeof updateModelSchema>;
 export type PricingForm = z.infer<typeof pricingSchema>;

@@ -5,7 +5,7 @@ import { ROUTES } from '@/lib/constants';
 describe('navigation around /ai/providers', () => {
   it('titles each page after its own entry, and nested detail pages after their parent', () => {
     expect(findNavMeta(ROUTES.ai).title).toBe('AI Configuration');
-    expect(findNavMeta(ROUTES.aiProviders)).toEqual({ title: 'AI Providers & Models', section: 'Product' });
+    expect(findNavMeta(ROUTES.aiProviders)).toEqual({ title: 'AI Gateway & Models', section: 'Product' });
     expect(findNavMeta(`${ROUTES.organizations}/org_123`).title).toBe('Organizations');
     expect(findNavMeta('/nowhere')).toEqual({ title: 'OrmiTech Admin', section: null });
   });

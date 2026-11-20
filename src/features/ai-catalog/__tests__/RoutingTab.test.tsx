@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { axiosClient } from '@/api/axiosClient';
 import { RoutingTab } from '../components/RoutingTab';
 import type { RoutingOverview } from '../types';
-import { apiFailure, model, ok, provider, renderWithClient } from './testUtils';
+import { apiFailure, model, ok, renderWithClient } from './testUtils';
 
 vi.mock('@/api/axiosClient', () => ({ axiosClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn() } }));
 const http = axiosClient as unknown as Record<'get' | 'post' | 'put' | 'patch', Mock>;
@@ -16,12 +16,13 @@ const policy: RoutingOverview['policy'] = {
   maxAttemptsPerMessage: 6, intentSlots: {}, reasoningEfforts: {}, modelEfforts: {}, updatedAt: '2026-11-18T10:00:00.000Z',
 };
 const overview = (over: Partial<RoutingOverview> = {}): RoutingOverview => ({
-  environment: { orchestrationEnabled: false, maxRetries: 2, requestTimeoutMs: 30000, openrouterKeyPresent: true },
+  gateway: { configured: true, baseUrl: 'https://openrouter.ai/api/v1' },
+  environment: { maxRetries: 2, requestTimeoutMs: 30000 },
   policy,
   models: [],
   defaults: { intentSlots: {}, reasoningEfforts: { router: 'none', slot1: 'low', slot2: 'minimal', slot3: 'none', slot4: 'none' } },
   intents: ['pricing'],
-  effective: { routingActive: false },
+  effective: { gatewayReady: false, routingActive: false },
   ...over,
 });
 
@@ -30,7 +31,6 @@ function serve(data: RoutingOverview = overview()) {
     if (path === '/admin/ai/routing') return ok(data);
     if (path === '/admin/ai/routing/health') return ok({ breakers: [] });
     if (path === '/admin/ai/models') return ok([model({ id: 'a', modelId: 'm-a', displayName: 'Model A', enabled: true })]);
-    if (path === '/admin/ai/providers') return ok([provider()]);
     throw new Error(`unexpected GET ${path}`);
   });
 }
@@ -45,11 +45,11 @@ describe('RoutingTab', () => {
     serve();
   });
 
-  it('says plainly that routing is not active and why, with the environment switch', async () => {
+  it('says plainly that routing is not active, that Model 1 answers everything meanwhile, and whether the gateway is ready', async () => {
     mount();
     expect(await screen.findByText('Routing is not active')).toBeTruthy();
-    expect(screen.getByText(/Environment switch off/)).toBeTruthy();
-    expect(screen.getByText(/exactly as before/)).toBeTruthy();
+    expect(screen.getByText('No Model 1: the AI is off')).toBeTruthy();
+    expect(screen.getByText(/every AI request is answered by Model 1/)).toBeTruthy();
     expect(screen.getByText(/Technical fallback never uses Model 4/)).toBeTruthy();
   });
 
@@ -70,6 +70,63 @@ describe('RoutingTab', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Routing policy saved.', 'success'));
   });
 
+  describe('platform instructions', () => {
+    const BOXES = ['Main instruction', 'Instruction for the intent router', 'Instruction for Model 1: Primary', 'Instruction for Model 2: Images and voice', 'Instruction for Model 3: Specialist', 'Instruction for Model 4: Off-topic'];
+
+    it('shows a main box and one box per role, each with a placeholder saying what belongs in it, and says the safety rules win', async () => {
+      mount();
+      for (const name of BOXES) {
+        const box = (await screen.findByLabelText(name)) as HTMLTextAreaElement;
+        expect(box.placeholder.length).toBeGreaterThan(20);
+        expect(box.value).toBe('');
+      }
+      expect(screen.getByText(/fixed safety rules \(which cannot be changed here and always win\)/)).toBeTruthy();
+      expect(screen.getByText(/The workspace keeps its single instruction box/)).toBeTruthy();
+      expect((screen.getByLabelText('Main instruction') as HTMLTextAreaElement).maxLength).toBe(4000);
+      expect((screen.getByLabelText('Instruction for Model 1: Primary') as HTMLTextAreaElement).maxLength).toBe(2000);
+    });
+
+    it('shows what is saved and sends only the boxes that were edited', async () => {
+      serve(overview({ policy: { ...policy, instructions: { main: 'Be warm.', slot1: 'Be brief.' } } }));
+      http.put.mockResolvedValue(ok({ policy: { ...policy, instructions: { main: 'Be warm.', slot1: 'Be brief.', slot3: 'Stay calm.' } }, warnings: [] }));
+      mount();
+      expect(((await screen.findByLabelText('Main instruction')) as HTMLTextAreaElement).value).toBe('Be warm.');
+      expect((screen.getByLabelText('Instruction for Model 1: Primary') as HTMLTextAreaElement).value).toBe('Be brief.');
+      await userEvent.type(screen.getByLabelText('Instruction for Model 3: Specialist'), 'Stay calm.');
+      expect(screen.getByText('Unsaved changes')).toBeTruthy();
+      await userEvent.click(screen.getByRole('button', { name: 'Save routing policy' }));
+      await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/routing', { instructions: { slot3: 'Stay calm.' } }));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('Routing policy saved.', 'success'));
+    });
+
+    it('clears an instruction by sending an empty text', async () => {
+      serve(overview({ policy: { ...policy, instructions: { slot2: 'Read the label first.' } } }));
+      http.put.mockResolvedValue(ok({ policy, warnings: [] }));
+      mount();
+      await userEvent.clear(await screen.findByLabelText('Instruction for Model 2: Images and voice'));
+      await userEvent.click(screen.getByRole('button', { name: 'Save routing policy' }));
+      await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/routing', { instructions: { slot2: '' } }));
+    });
+
+    it('counts the characters, and is read-only without write permission', async () => {
+      serve(overview({ policy: { ...policy, instructions: { main: 'abc' } } }));
+      const first = mount(false);
+      const box = (await screen.findByLabelText('Main instruction')) as HTMLTextAreaElement;
+      expect(box.disabled).toBe(true);
+      expect(screen.getByText(/3 \/ 4,000 characters/)).toBeTruthy();
+      first.unmount();
+    });
+
+    it('shows the API’s refusal of an instruction and keeps the draft', async () => {
+      http.put.mockRejectedValue(apiFailure(400, 'Validation failed', [{ field: 'instructions.main', messages: ['must be at most 4000 characters'] }]));
+      mount();
+      await userEvent.type(await screen.findByLabelText('Main instruction'), 'x');
+      await userEvent.click(screen.getByRole('button', { name: 'Save routing policy' }));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.any(String), 'error'));
+      expect(screen.getByText('Unsaved changes')).toBeTruthy();
+    });
+  });
+
   it('turns routing on with the platform switch', async () => {
     http.put.mockResolvedValue(ok({ policy: { ...policy, enabled: true }, warnings: [] }));
     mount();
@@ -87,27 +144,25 @@ describe('RoutingTab', () => {
     expect(screen.getByText('Unsaved changes')).toBeTruthy();
   });
 
-  it('checks the policy against the catalogue and lists errors and warnings', async () => {
+  it('checks the configuration and lists errors and warnings', async () => {
     http.post.mockResolvedValue(ok({ ok: false, problems: [{ level: 'error', role: 'slot2', code: 'slot2_no_vision', message: 'x/y is not marked as able to see pictures (vision), which slot 2 is for.' }, { level: 'warning', role: 'router', code: 'missing_router', message: 'No router model is set.' }] }));
     mount();
-    await userEvent.click(await screen.findByRole('button', { name: /Check against the catalogue/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /Check the configuration/ }));
     expect(await screen.findByText(/not marked as able to see pictures/)).toBeTruthy();
     expect(screen.getByText(/No router model is set/)).toBeTruthy();
   });
 
-  it('creates the OpenRouter provider from the environment key, without ever showing a key', async () => {
-    http.post.mockResolvedValue(ok(provider({ slug: 'openrouter' })));
+  it('says plainly whether the gateway is ready, and never shows a key', async () => {
+    serve(overview({ gateway: { configured: false, baseUrl: 'https://openrouter.ai/api/v1' } }));
     mount();
-    await userEvent.click(await screen.findByRole('button', { name: /Create the OpenRouter provider/ }));
-    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/admin/ai/routing/openrouter'));
-    expect(screen.getByText(/stored encrypted and never shown/)).toBeTruthy();
+    expect(await screen.findByText('No key set: the AI is off')).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/sk-/);
+    expect(screen.queryByRole('button', { name: /Create the OpenRouter provider/ })).toBeNull();
   });
 
-  it('hides the create button when the environment has no key, and every control is read-only without write permission', async () => {
-    serve(overview({ environment: { orchestrationEnabled: true, maxRetries: 2, requestTimeoutMs: 30000, openrouterKeyPresent: false } }));
+  it('every control is read-only without write permission', async () => {
     const first = mount(false);
     expect(await screen.findByText('Routing is not active')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /Create the OpenRouter provider/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Save routing policy' })).toBeNull();
     expect((screen.getByRole('switch', { name: 'Routing enabled' }) as HTMLButtonElement).disabled).toBe(true);
     first.unmount();
@@ -129,7 +184,7 @@ describe('RoutingTab', () => {
     it('says what an unset role really asks for, never "provider default" when the API sends something else', async () => {
       withSlot1();
       mount();
-      expect(await screen.findByText(/Model 1: Primary/)).toBeTruthy();
+      expect(await screen.findByText('Model 1: Primary')).toBeTruthy();
       expect(screen.getByText('Not set: this role asks for “low”.')).toBeTruthy();
       expect(screen.queryByText(/nothing sent/i)).toBeNull();
     });
@@ -164,7 +219,7 @@ describe('RoutingTab', () => {
 
     it('shows no accepted-effort boxes for a role with no model', async () => {
       mount();
-      await screen.findByText(/Model 1: Primary/);
+      await screen.findByText('Model 1: Primary');
       expect(screen.queryByRole('checkbox', { name: /accepts/ })).toBeNull();
       expect(screen.getAllByText('No model chosen.').length).toBe(5);
     });

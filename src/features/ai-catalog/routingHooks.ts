@@ -16,14 +16,3 @@ export function useUpdateRouting() {
 }
 
 export const useValidateRouting = () => useMutation({ mutationFn: () => aiRoutingApi.validate() });
-
-export function useCreateOpenrouter() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => aiRoutingApi.createOpenrouter(),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['ai-catalog', 'providers'] });
-      void queryClient.invalidateQueries({ queryKey: aiRoutingKeys.overview });
-    },
-  });
-}

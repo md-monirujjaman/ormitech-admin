@@ -3,12 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { apiErrorMessage } from '@/lib/apiError';
 import { formatPrice, pricesEqual } from '../format';
 import { CAPABILITIES, CAPABILITY_LABELS, createModelSchema, fieldErrors, pricingSchema, updateModelSchema } from '../schemas';
-import type { AiModel, AiProvider, CreateModelInput, ModelCapability, SetPricingInput, UpdateModelInput } from '../types';
+import type { AiModel, CreateModelInput, ModelCapability, SetPricingInput, UpdateModelInput } from '../types';
 
 function Problem({ children }: { children?: string | undefined }) {
   return children ? (
@@ -18,13 +17,11 @@ function Problem({ children }: { children?: string | undefined }) {
   ) : null;
 }
 
-/** Adds a model to a provider, or edits its display name, description, context window and capabilities. */
+/** Adds a model to the list, or edits its display name, description, context window and capabilities. */
 export function ModelFormDialog({
   open,
   onOpenChange,
   editing,
-  providers,
-  defaultProviderId,
   isPending,
   error,
   onCreate,
@@ -33,14 +30,12 @@ export function ModelFormDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: AiModel | null;
-  providers: AiProvider[];
-  defaultProviderId: string | null;
   isPending: boolean;
   error: unknown;
   onCreate: (input: CreateModelInput) => void;
   onUpdate: (id: string, input: UpdateModelInput) => void;
 }) {
-  const blank = { providerId: defaultProviderId ?? '', modelId: '', displayName: '', description: '', contextWindow: '', capabilities: ['chat'] as ModelCapability[] };
+  const blank = { modelId: '', displayName: '', description: '', contextWindow: '', capabilities: ['chat'] as ModelCapability[] };
   const [values, setValues] = useState(blank);
   const [problems, setProblems] = useState<Record<string, string>>({});
 
@@ -49,10 +44,9 @@ export function ModelFormDialog({
     setProblems({});
     setValues(
       editing
-        ? { providerId: editing.providerId, modelId: editing.modelId, displayName: editing.displayName, description: editing.description, contextWindow: editing.contextWindow === null ? '' : String(editing.contextWindow), capabilities: editing.capabilities }
-        : { providerId: defaultProviderId ?? '', modelId: '', displayName: '', description: '', contextWindow: '', capabilities: ['chat'] },
+        ? { modelId: editing.modelId, displayName: editing.displayName, description: editing.description, contextWindow: editing.contextWindow === null ? '' : String(editing.contextWindow), capabilities: editing.capabilities }
+        : { modelId: '', displayName: '', description: '', contextWindow: '', capabilities: ['chat'] },
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when the dialog opens or the row changes
   }, [open, editing]);
 
   const toggle = (capability: ModelCapability) =>
@@ -75,7 +69,6 @@ export function ModelFormDialog({
     if (!parsed.success) return setProblems(fieldErrors(parsed.error));
     setProblems({});
     onCreate({
-      providerId: parsed.data.providerId,
       modelId: parsed.data.modelId,
       displayName: parsed.data.displayName,
       ...(parsed.data.description ? { description: parsed.data.description } : {}),
@@ -90,7 +83,7 @@ export function ModelFormDialog({
         <DialogHeader>
           <DialogTitle>{editing ? `Edit ${editing.displayName}` : 'Add a model'}</DialogTitle>
           <DialogDescription>
-            {editing ? 'The provider’s model id cannot change.' : 'It starts switched off, without prices and unverified. Enter the model id exactly as the provider names it.'}
+            {editing ? 'The model id cannot change.' : 'It starts switched off, without prices and unverified. Enter the model id exactly as OpenRouter names it, for example vendor/model-name.'}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -101,22 +94,6 @@ export function ModelFormDialog({
             submit();
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="model-provider">Provider</Label>
-            <Select value={values.providerId} disabled={Boolean(editing)} onValueChange={(value) => setValues((current) => ({ ...current, providerId: value }))}>
-              <SelectTrigger id="model-provider" aria-label="Provider">
-                <SelectValue placeholder="Choose a provider" />
-              </SelectTrigger>
-              <SelectContent>
-                {providers.map((provider) => (
-                  <SelectItem key={provider.id} value={provider.id}>
-                    {provider.name} ({provider.slug})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Problem>{problems.providerId}</Problem>
-          </div>
           <div className="space-y-1.5">
             <Label htmlFor="model-id">Model id</Label>
             <Input id="model-id" value={values.modelId} disabled={Boolean(editing)} maxLength={120} autoComplete="off" spellCheck={false} onChange={(event) => setValues((current) => ({ ...current, modelId: event.target.value }))} />
@@ -135,7 +112,7 @@ export function ModelFormDialog({
           <div className="space-y-1.5">
             <Label htmlFor="model-context">Context window (tokens, optional)</Label>
             <Input id="model-context" value={values.contextWindow} inputMode="numeric" onChange={(event) => setValues((current) => ({ ...current, contextWindow: event.target.value }))} />
-            <p className="text-xs text-muted-foreground">Only a figure taken from the provider’s documentation. Leave it empty if you have not checked it.</p>
+            <p className="text-xs text-muted-foreground">Only a figure taken from OpenRouter’s model page. Leave it empty if you have not checked it.</p>
             <Problem>{problems.contextWindow}</Problem>
           </div>
           <fieldset className="space-y-1.5">
@@ -251,7 +228,7 @@ export function PricingDialog({
         <DialogHeader>
           <DialogTitle>Prices for {model.displayName}</DialogTitle>
           <DialogDescription>
-            What {model.providerSlug} charges per 1,000,000 tokens, from its published price list. Up to 8 decimal places. Nothing is filled in for you.
+            What OpenRouter charges per 1,000,000 tokens for this model, from its published price list. Up to 8 decimal places. Nothing is filled in for you.
           </DialogDescription>
         </DialogHeader>
         <form

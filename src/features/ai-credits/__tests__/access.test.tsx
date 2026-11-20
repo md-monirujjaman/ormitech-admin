@@ -38,6 +38,6 @@ describe('the credit policy tab', () => {
     granted.list = ['ai_providers.read'];
     renderWithClient(<AiProvidersPage />);
     expect(screen.queryByRole('tab', { name: 'Credit policy' })).toBeNull();
-    for (const name of ['Providers', 'Models & pricing', 'Plan access']) expect(screen.getByRole('tab', { name })).toBeTruthy();
+    for (const name of ['Connection', 'Models & pricing', 'Routing']) expect(screen.getByRole('tab', { name })).toBeTruthy();
   });
 });
