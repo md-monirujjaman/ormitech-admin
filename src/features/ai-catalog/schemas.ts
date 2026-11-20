@@ -17,13 +17,16 @@ const price = (label: string) =>
 export const CAPABILITIES = ['chat', 'vision', 'json_output', 'audio'] as const;
 export const CAPABILITY_LABELS: Record<(typeof CAPABILITIES)[number], string> = { chat: 'Chat', vision: 'Vision (reads pictures)', json_output: 'JSON output', audio: 'Audio (listens to voice messages)' };
 
+/** OpenRouter names a model `author/slug`, with an optional `:variant` (for example `:free`). The API checks the same pattern. */
+export const OPENROUTER_MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._-]*(:[A-Za-z0-9._-]+)?$/;
+
 export const createModelSchema = z.object({
   modelId: z
     .string()
     .trim()
     .min(1, "Enter OpenRouter's model id, for example vendor/model-name")
     .max(120)
-    .regex(/^[A-Za-z0-9][A-Za-z0-9._:/-]*$/, 'Use only letters, digits and . _ : / -'),
+    .regex(OPENROUTER_MODEL_ID, 'Use the OpenRouter id: author/model-name, with an optional :variant (letters, digits and . _ - only)'),
   displayName: z.string().trim().min(1, 'Enter a display name').max(100),
   description: z.string().trim().max(500),
   contextWindow: z.union([z.literal(''), z.string().trim().regex(/^\d{1,9}$/, 'Enter a whole number of tokens').refine((v) => Number(v) >= 1 && Number(v) <= 100_000_000, 'Between 1 and 100000000')]),

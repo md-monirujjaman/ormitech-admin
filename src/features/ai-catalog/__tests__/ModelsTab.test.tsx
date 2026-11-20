@@ -293,23 +293,38 @@ describe('ModelsTab', () => {
       const dialog = await screen.findByRole('dialog');
       await userEvent.type(within(dialog).getByLabelText('Model id'), 'has space');
       await userEvent.click(within(dialog).getByRole('button', { name: 'Add model' }));
-      expect(within(dialog).getByText(/Use only letters, digits and/)).toBeTruthy();
+      expect(within(dialog).getByText(/Use the OpenRouter id: author\/model-name/)).toBeTruthy();
       expect(within(dialog).getByText('Enter a display name')).toBeTruthy();
       expect(http.post).not.toHaveBeenCalled();
     });
 
-    it('adds a model, with no price and the chat capability, and says what is still to do', async () => {
-      http.post.mockResolvedValue(ok(model({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', modelId: 'fixture-new', displayName: 'Fixture New' })));
+    it("refuses an id that is not in OpenRouter's author/model-name form before asking the API, and shows an example as a placeholder only", async () => {
       mount();
       await screen.findByText('Live Model');
       await userEvent.click(screen.getByRole('button', { name: 'Add model' }));
       const dialog = await screen.findByRole('dialog');
-      await userEvent.type(within(dialog).getByLabelText('Model id'), 'fixture-new');
+      const input = within(dialog).getByLabelText('Model id') as HTMLInputElement;
+      expect(input.value).toBe('');
+      expect(input.placeholder).toBe('author/model-name');
+      await userEvent.type(input, 'gpt-4o');
+      await userEvent.type(within(dialog).getByLabelText('Display name'), 'No author');
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Add model' }));
+      expect(within(dialog).getByText(/Use the OpenRouter id: author\/model-name/)).toBeTruthy();
+      expect(http.post).not.toHaveBeenCalled();
+    });
+
+    it('adds a model, with no price and the chat capability, and says what is still to do', async () => {
+      http.post.mockResolvedValue(ok(model({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', modelId: 'fixture/new', displayName: 'Fixture New' })));
+      mount();
+      await screen.findByText('Live Model');
+      await userEvent.click(screen.getByRole('button', { name: 'Add model' }));
+      const dialog = await screen.findByRole('dialog');
+      await userEvent.type(within(dialog).getByLabelText('Model id'), 'fixture/new');
       await userEvent.type(within(dialog).getByLabelText('Display name'), 'Fixture New');
       await userEvent.type(within(dialog).getByLabelText('Context window (tokens, optional)'), '64000');
       await userEvent.click(within(dialog).getByRole('button', { name: 'Add model' }));
       await waitFor(() =>
-        expect(http.post).toHaveBeenCalledWith('/admin/ai/models', { modelId: 'fixture-new', displayName: 'Fixture New', contextWindow: 64000, capabilities: ['chat'] }),
+        expect(http.post).toHaveBeenCalledWith('/admin/ai/models', { modelId: 'fixture/new', displayName: 'Fixture New', contextWindow: 64000, capabilities: ['chat'] }),
       );
       await waitFor(() => expect(notify).toHaveBeenCalledWith('Fixture New was added. Set its prices and verify it before enabling.', 'success'));
     });
@@ -336,7 +351,7 @@ describe('ModelsTab', () => {
       await screen.findByText('Live Model');
       await userEvent.click(screen.getByRole('button', { name: 'Add model' }));
       const dialog = await screen.findByRole('dialog');
-      await userEvent.type(within(dialog).getByLabelText('Model id'), 'live-model');
+      await userEvent.type(within(dialog).getByLabelText('Model id'), 'vendor/live-model');
       await userEvent.type(within(dialog).getByLabelText('Display name'), 'Again');
       await userEvent.click(within(dialog).getByRole('button', { name: 'Add model' }));
       expect(await within(dialog).findByText('A record with the same unique value already exists')).toBeTruthy();

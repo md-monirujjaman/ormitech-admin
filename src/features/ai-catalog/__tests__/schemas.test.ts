@@ -66,11 +66,16 @@ describe('prices are compared and shown without rounding', () => {
 });
 
 describe('model form', () => {
-  const modelForm = { modelId: 'fixture-model-a', displayName: 'Fixture', description: '', contextWindow: '', capabilities: ['chat' as const] };
+  const modelForm = { modelId: 'fixture/model-a', displayName: 'Fixture', description: '', contextWindow: '', capabilities: ['chat' as const] };
 
   it('accepts a model and an optional context window', () => {
     expect(createModelSchema.safeParse(modelForm).success).toBe(true);
     expect(createModelSchema.safeParse({ ...modelForm, contextWindow: '128000' }).success).toBe(true);
+  });
+
+  it("takes only OpenRouter's author/model-name form, with an optional :variant", () => {
+    for (const good of ['vendor/model-name', 'meta-llama/llama-3.1-8b-instruct', 'vendor/model-name:free', 'openrouter/auto', 'Vendor/Model_1.5']) expect(createModelSchema.safeParse({ ...modelForm, modelId: good }).success, good).toBe(true);
+    for (const bad of ['gpt-4o', 'vendor/', '/model', 'vendor//model', 'vendor/a/b', 'vendor/model:', 'vendor/model:a:b', '-vendor/model', 'vendor/-model', 'vendor/model name', 'vendor/model?x=1', 'vendor/../model']) expect(createModelSchema.safeParse({ ...modelForm, modelId: bad }).success, bad).toBe(false);
   });
 
   it('refuses an id with spaces, a bad context window or no capability', () => {

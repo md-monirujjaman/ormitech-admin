@@ -123,6 +123,10 @@ export interface RoutingModelView {
   providerSlug: string;
   capabilities: string[];
   contextWindow: number | null;
+  /** The saved model's own state, as the API reads it: why `usable` is false. */
+  enabled: boolean;
+  priced: boolean;
+  verified: boolean;
   usable: boolean;
   acceptedEfforts: string[] | null;
   /** What the policy asks for this role. */

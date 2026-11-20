@@ -87,6 +87,17 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
   const accepted = (): Record<string, string[]> => ({ ...policy.modelEfforts, ...(draft.modelEfforts ?? {}) });
   /** The effort this role asks for: its own setting, else the role's default (which the API really uses, never "nothing"). */
   const askedFor = (role: ModelRole): ReasoningEffort => efforts()[role] ?? overview.defaults.reasoningEfforts[role];
+  /**
+   * A model's name as it is saved, taken from the model list when that has arrived and from the routing view otherwise, so a saved model
+   * is never shown as an empty field. `off` is true only when the API says the model is switched off.
+   */
+  const describe = (id: string): { label: string; off: boolean } => {
+    const row = (models.data ?? []).find((entry) => entry.id === id);
+    if (row) return { label: `${row.displayName} (${row.providerSlug}/${row.modelId})`, off: !row.enabled };
+    const known = overview.models.find((entry) => entry.modelRowId === id);
+    if (known) return { label: `${known.displayName} (${known.providerSlug}/${known.modelId})`, off: known.enabled === false };
+    return { label: 'A saved model that is no longer in the model list', off: false };
+  };
   const toggleAccepted = (modelId: string, effort: string) => {
     const current = accepted()[modelId] ?? [];
     set({ modelEfforts: { ...accepted(), [modelId]: current.includes(effort) ? current.filter((entry) => entry !== effort) : [...current, effort] } });
@@ -128,7 +139,11 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
 
       {ROLES.map(({ role, field, enabled, title, hint }) => {
         const chosen = (value(field) as string | null) ?? null;
-        const shown = overview.models.find((model) => model.role === role);
+        const saved = ((policy as unknown as Record<string, unknown>)[field] as string | null | undefined) ?? null;
+        // The details of the model saved for this role; after a change they are the old model's until the view is read again, so match the model too.
+        const shown = overview.models.find((model) => model.role === role && model.modelRowId === saved);
+        const chosenIsListed = chosen === null || options.some((model) => model.id === chosen);
+        const chosenInfo = chosen === null ? null : describe(chosen);
         const effort = askedFor(role);
         const acceptedList = chosen === null ? null : (accepted()[chosen] ?? null);
         const sends = effectiveEffort(effort, acceptedList);
@@ -153,6 +168,7 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NONE}>Not set</SelectItem>
+                    {!chosenIsListed && chosen !== null && chosenInfo && <SelectItem value={chosen}>{chosenInfo.label}</SelectItem>}
                     {options.map((model) => (
                       <SelectItem key={model.id} value={model.id}>
                         {model.displayName} ({model.providerSlug}/{model.modelId})
@@ -160,6 +176,16 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
                     ))}
                   </SelectContent>
                 </Select>
+                {field in draft && chosen !== saved ? (
+                  <p className="text-xs text-muted-foreground">
+                    Not saved yet. Saved now: {saved === null ? 'nothing (Not set)' : describe(saved).label}.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{saved === null ? 'Nothing is saved for this role.' : 'Saved.'}</p>
+                )}
+                {!chosenIsListed && chosenInfo?.off && !(field in draft) && (
+                  <p className="text-xs text-destructive">The saved model is switched off, so it is not in the choices below. Switch it on in the Models tab, or pick another model.</p>
+                )}
                 {shown && !(field in draft) && (
                   <p className="text-xs text-muted-foreground">
                     {shown.capabilities.join(', ')} · {shown.contextWindow ? `${shown.contextWindow.toLocaleString()} tokens` : 'context not set'} · {shown.usable ? 'ready' : 'not ready: price it, verify it and switch it on in the Models tab'}
