@@ -78,6 +78,46 @@ describe('RoutingTab', () => {
     await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/routing', { enabled: true }));
   });
 
+  describe('understand first', () => {
+    it('is off by default and says what it does and what it costs', async () => {
+      mount();
+      expect(await screen.findByText('Understand first is not active')).toBeTruthy();
+      expect((screen.getByRole('switch', { name: 'Understand first' }) as HTMLButtonElement).getAttribute('aria-checked')).toBe('false');
+      expect(screen.getByText(/one extra short Model 1 request per customer message/)).toBeTruthy();
+      expect(screen.getByText(/Works only while routing is on/)).toBeTruthy();
+    });
+
+    it('is switched on with its own switch, saved with the policy, and warns while routing is off', async () => {
+      http.put.mockResolvedValue(ok({ policy: { ...policy, enabled: true, understandFirst: true }, warnings: [] }));
+      mount();
+      await userEvent.click(await screen.findByRole('switch', { name: 'Understand first' }));
+      expect(screen.getByText(/Switch routing on as well/)).toBeTruthy();
+      await userEvent.click(screen.getByRole('switch', { name: 'Routing enabled' }));
+      expect(screen.queryByText(/Switch routing on as well/)).toBeNull();
+      await userEvent.click(screen.getByRole('button', { name: 'Save routing policy' }));
+      await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/routing', { understandFirst: true, enabled: true }));
+    });
+
+    it('shows when it is active, and reads the saved value', async () => {
+      serve(overview({ policy: { ...policy, enabled: true, understandFirst: true, understandFirstAvailable: true }, effective: { gatewayReady: true, routingActive: true, understandFirstActive: true } }));
+      mount();
+      expect(await screen.findByText('Understand first is active')).toBeTruthy();
+      expect((screen.getByRole('switch', { name: 'Understand first' }) as HTMLButtonElement).getAttribute('aria-checked')).toBe('true');
+    });
+
+    it('cannot be changed until the API database update 0081 is applied, and says so', async () => {
+      serve(overview({ policy: { ...policy, understandFirst: false, understandFirstAvailable: false } }));
+      mount();
+      expect(await screen.findByText(/database update 0081, which has not been applied yet/)).toBeTruthy();
+      expect((screen.getByRole('switch', { name: 'Understand first' }) as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('is read-only without write permission', async () => {
+      mount(false);
+      expect((await screen.findByRole('switch', { name: 'Understand first' }) as HTMLButtonElement).disabled).toBe(true);
+    });
+  });
+
   it('shows the API\'s refusal and keeps the draft', async () => {
     http.put.mockRejectedValue(apiFailure(400, 'Validation failed', [{ field: 'enabled', messages: ['Routing needs a primary model (slot 1) before it can be switched on'] }]));
     mount();

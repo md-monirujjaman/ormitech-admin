@@ -112,6 +112,10 @@ export interface RoutingPolicy {
   modelEfforts: Record<string, string[]>;
   /** The platform instructions the super admin wrote. A key that was never written, or was cleared, is absent. */
   instructions?: Partial<Record<InstructionKey, string>>;
+  /** "Understand first": Model 1 works out what the customer wants and the step of the chat before the answering model is called. Off by default. */
+  understandFirst?: boolean;
+  /** False until the API's migration 0081 is applied: the switch then reads as off and cannot be changed. Absent on an older API. */
+  understandFirstAvailable?: boolean;
   updatedAt: string;
 }
 
@@ -145,7 +149,7 @@ export interface RoutingOverview {
   intents: string[];
   /** The longest a main instruction and a role instruction may be. */
   instructionLimits?: { main: number; role: number };
-  effective: { gatewayReady: boolean; routingActive: boolean };
+  effective: { gatewayReady: boolean; routingActive: boolean; understandFirstActive?: boolean };
 }
 
 export interface RoutingProblem {
@@ -156,7 +160,7 @@ export interface RoutingProblem {
 }
 
 export type UpdateRoutingInput = Partial<
-  Pick<RoutingPolicy, 'enabled' | 'routerEnabled' | 'slot1Enabled' | 'slot2Enabled' | 'slot3Enabled' | 'slot4Enabled' | 'maxRetries' | 'requestTimeoutMs' | 'routerTimeoutMs' | 'maxOutputTokens' | 'routerMaxTokens' | 'offtopicConfidence' | 'breakerThreshold' | 'breakerOpenSeconds' | 'maxAttemptsPerMessage' | 'reasoningEfforts' | 'intentSlots' | 'modelEfforts'>
+  Pick<RoutingPolicy, 'enabled' | 'routerEnabled' | 'slot1Enabled' | 'slot2Enabled' | 'slot3Enabled' | 'slot4Enabled' | 'maxRetries' | 'requestTimeoutMs' | 'routerTimeoutMs' | 'maxOutputTokens' | 'routerMaxTokens' | 'offtopicConfidence' | 'breakerThreshold' | 'breakerOpenSeconds' | 'maxAttemptsPerMessage' | 'reasoningEfforts' | 'intentSlots' | 'modelEfforts' | 'understandFirst'>
 > & {
   routerModelId?: string | null;
   slot1ModelId?: string | null;
