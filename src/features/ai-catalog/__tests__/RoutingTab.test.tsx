@@ -160,51 +160,92 @@ describe('RoutingTab', () => {
     expect(await screen.findByText(/routing policy/i)).toBeTruthy();
   });
 
-  describe('reasoning effort: what is asked for and what is really sent', () => {
+  describe('reasoning effort: one choice per role, what each model accepts is read from OpenRouter', () => {
     const withSlot1 = (accepted?: string[], asked?: string) =>
       serve(overview({ policy: { ...policy, slot1ModelId: 'a', ...(asked ? { reasoningEfforts: { slot1: asked as never } } : {}), modelEfforts: accepted ? { a: accepted } : {} } }));
 
-    it('says what an unset role really asks for, never "provider default" when the API sends something else', async () => {
-      withSlot1();
-      mount();
-      expect(await screen.findByText('Model 1: Primary')).toBeTruthy();
-      expect(screen.getByText('Not set: this role asks for “low”.')).toBeTruthy();
-      expect(screen.queryByText(/nothing sent/i)).toBeNull();
-    });
-
-    it('says no effort is sent to a model whose accepted efforts are not recorded', async () => {
-      withSlot1();
-      mount();
-      expect((await screen.findByTestId('slot1-sends')).textContent).toBe('Sends nothing: the efforts this model accepts are not recorded below.');
-    });
-
-    it('shows the effort sent as it is asked for when the model accepts it', async () => {
-      withSlot1(['low', 'medium', 'high']);
-      mount();
-      expect((await screen.findByTestId('slot1-sends')).textContent).toBe('Sends: low.');
-    });
-
-    it('shows the nearest accepted effort when the model does not accept the one asked for (Gemini cannot turn reasoning off)', async () => {
-      withSlot1(['low', 'medium', 'high'], 'none');
-      mount();
-      expect((await screen.findByTestId('slot1-sends')).textContent).toBe('Sends: low (the model does not accept none).');
-    });
-
-    it('records what a model accepts, live, and saves it with the policy', async () => {
-      withSlot1();
-      http.put.mockResolvedValue(ok({ policy: { ...policy, slot1ModelId: 'a', modelEfforts: { a: ['low'] } }, warnings: [] }));
-      mount();
-      await userEvent.click(await screen.findByRole('checkbox', { name: 'Model 1: Primary accepts low' }));
-      expect(screen.getByTestId('slot1-sends').textContent).toBe('Sends: low.');
-      await userEvent.click(screen.getByRole('button', { name: 'Save routing policy' }));
-      await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/routing', { modelEfforts: { a: ['low'] } }));
-    });
-
-    it('shows no accepted-effort boxes for a role with no model', async () => {
+    it('has one effort control per role and no boxes to tick', async () => {
+      withSlot1(['low', 'high']);
       mount();
       await screen.findByText('Model 1: Primary');
+      expect(screen.getAllByRole('combobox', { name: /reasoning effort/ }).length).toBe(5);
       expect(screen.queryByRole('checkbox', { name: /accepts/ })).toBeNull();
-      expect(screen.getAllByText('No model chosen.').length).toBe(5);
+      expect(screen.queryByText(/Reasoning efforts this model accepts/)).toBeNull();
+    });
+
+    it('says what an unset role really uses', async () => {
+      withSlot1();
+      mount();
+      expect(await screen.findByText('Not set: this role uses “low”.')).toBeTruthy();
+    });
+
+    it('says the efforts are not read yet for a model OpenRouter has not been asked about, and sends the effort as chosen', async () => {
+      withSlot1();
+      mount();
+      expect((await screen.findByTestId('slot1-accepts')).textContent).toMatch(/not read yet/);
+      expect(screen.getByTestId('slot1-sends').textContent).toBe('Sends: low.');
+    });
+
+    it('shows what the model accepts, as read from OpenRouter, and the effort sent as chosen when it accepts it', async () => {
+      withSlot1(['none', 'low', 'medium', 'high']);
+      mount();
+      expect((await screen.findByTestId('slot1-accepts')).textContent).toBe('This model accepts (read from OpenRouter): none, low, medium, high.');
+      expect(screen.getByTestId('slot1-sends').textContent).toBe('Sends: low.');
+    });
+
+    it('shows the nearest accepted effort when the model does not accept the one chosen (GLM cannot turn reasoning off)', async () => {
+      withSlot1(['low', 'high'], 'none');
+      mount();
+      expect((await screen.findByTestId('slot1-sends')).textContent).toBe('Sends: low (the model does not accept none, so the nearest it accepts).');
+    });
+
+    it('says nothing is sent to a model that takes no reasoning effort', async () => {
+      withSlot1([], 'default');
+      mount();
+      expect((await screen.findByTestId('slot1-accepts')).textContent).toBe('This model takes no reasoning effort: nothing is sent to it.');
+      expect(screen.getByTestId('slot1-sends').textContent).toBe('Sends nothing: the provider decides.');
+    });
+
+    it('offers only the efforts the model accepts, plus "nothing", and the one that is saved', async () => {
+      withSlot1(['low', 'high'], 'low');
+      mount();
+      await userEvent.click(await screen.findByRole('combobox', { name: 'Model 1: Primary reasoning effort' }));
+      const options = (await screen.findAllByRole('option')).map((option) => option.textContent);
+      expect(options).toEqual(['low', 'high', 'Nothing (the provider decides)']);
+    });
+
+    it('saves the chosen effort for the role, and nothing about what a model accepts', async () => {
+      withSlot1(['none', 'low', 'high']);
+      http.put.mockResolvedValue(ok({ policy: { ...policy, slot1ModelId: 'a', reasoningEfforts: { slot1: 'none' } }, warnings: [] }));
+      mount();
+      await userEvent.click(await screen.findByRole('combobox', { name: 'Model 1: Primary reasoning effort' }));
+      await userEvent.click(await screen.findByRole('option', { name: 'none' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Save routing policy' }));
+      await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/routing', { reasoningEfforts: { slot1: 'none' } }));
+    });
+
+    it('reads the efforts from OpenRouter on request and says what it found', async () => {
+      withSlot1();
+      http.post.mockResolvedValue(ok({ synced: 3, unknown: ['vendor/x'] }));
+      mount();
+      await userEvent.click(await screen.findByRole('button', { name: /Read efforts from OpenRouter/ }));
+      await waitFor(() => expect(http.post).toHaveBeenCalledWith('/admin/ai/routing/sync-efforts'));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/Read the reasoning efforts of 3 model\(s\).*vendor\/x/), 'warning'));
+    });
+
+    it('says so when OpenRouter cannot be read', async () => {
+      withSlot1();
+      http.post.mockRejectedValue(apiFailure(409, 'Conflict'));
+      mount();
+      await userEvent.click(await screen.findByRole('button', { name: /Read efforts from OpenRouter/ }));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.any(String), 'error'));
+    });
+
+    it('has no reading button without write permission, and shows no effort sentence for a role with no model', async () => {
+      mount(false);
+      await screen.findByText('Model 1: Primary');
+      expect(screen.queryByRole('button', { name: /Read efforts from OpenRouter/ })).toBeNull();
+      expect(screen.getAllByText('No model chosen.').length).toBeGreaterThanOrEqual(5);
     });
   });
 });

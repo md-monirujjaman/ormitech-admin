@@ -8,5 +8,6 @@ export const aiRoutingApi = {
   get: () => unwrap<RoutingOverview>(axiosClient.get('/admin/ai/routing')),
   update: (input: UpdateRoutingInput) => unwrap<{ policy: RoutingPolicy; warnings: RoutingProblem[] }>(axiosClient.put('/admin/ai/routing', input)),
   validate: () => unwrap<{ ok: boolean; problems: RoutingProblem[] }>(axiosClient.post('/admin/ai/routing/validate')),
+  syncEfforts: () => unwrap<{ synced: number; unknown: string[] }>(axiosClient.post('/admin/ai/routing/sync-efforts')),
   health: () => unwrap<{ breakers: Array<{ modelRowId: string; failures: number; open: boolean; openUntil: string | null }> }>(axiosClient.get('/admin/ai/routing/health')),
 };

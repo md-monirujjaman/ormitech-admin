@@ -7,10 +7,10 @@ describe('effectiveEffort', () => {
   it('sends the effort asked for when accepted', () => {
     for (const effort of ['none', 'minimal', 'low', 'medium', 'high'] as const) expect(effectiveEffort(effort, all)).toBe(effort);
   });
-  it('sends nothing for default or when the accepted efforts are not recorded', () => {
+  it('sends nothing for default, and the effort as asked when what the model accepts is not read yet', () => {
     expect(effectiveEffort('default', all)).toBe('default');
-    expect(effectiveEffort('low', null)).toBe('default');
-    expect(effectiveEffort('low', undefined)).toBe('default');
+    expect(effectiveEffort('low', null)).toBe('low');
+    expect(effectiveEffort('low', undefined)).toBe('low');
   });
   it('moves to the nearest accepted effort, the lower on a tie', () => {
     expect(effectiveEffort('none', ['high', 'medium', 'low'])).toBe('low');

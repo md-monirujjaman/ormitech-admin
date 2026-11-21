@@ -31,4 +31,13 @@ export function useUpdateRouting() {
   });
 }
 
+/** Reads which reasoning efforts each model accepts from OpenRouter; the view is read again afterwards, which brings them. */
+export function useSyncEfforts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => aiRoutingApi.syncEfforts(),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: aiRoutingKeys.overview }),
+  });
+}
+
 export const useValidateRouting = () => useMutation({ mutationFn: () => aiRoutingApi.validate() });

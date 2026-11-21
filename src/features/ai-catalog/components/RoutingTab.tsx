@@ -1,4 +1,4 @@
-import { CircleAlert, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { CircleAlert, RefreshCw, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { apiErrorMessage } from '@/lib/apiError';
 import { useAiModels } from '../hooks';
 import { effectiveEffort, EFFORT_SCALE } from '../effort';
-import { useAiRouting, useAiRoutingHealth, useUpdateRouting, useValidateRouting } from '../routingHooks';
+import { useAiRouting, useAiRoutingHealth, useSyncEfforts, useUpdateRouting, useValidateRouting } from '../routingHooks';
 import type { AiModel, ModelRole, ReasoningEffort, RoutingPolicy, RoutingProblem, UpdateRoutingInput } from '../types';
 import { LoadFailed } from './LoadFailed';
 import type { Notify } from './notice';
@@ -64,6 +64,7 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
   const health = useAiRoutingHealth();
   const update = useUpdateRouting();
   const validate = useValidateRouting();
+  const syncEfforts = useSyncEfforts();
   const [draft, setDraft] = useState<UpdateRoutingInput>({});
   const [numbers, setNumbers] = useState<Numbers | null>(null);
   const [problems, setProblems] = useState<RoutingProblem[] | null>(null);
@@ -84,7 +85,8 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
   const dirty = Object.keys(draft).length > 0 || JSON.stringify(numbers) !== JSON.stringify(numbersOf(policy));
 
   const efforts = (): Partial<Record<ModelRole, ReasoningEffort>> => ({ ...policy.reasoningEfforts, ...(draft.reasoningEfforts ?? {}) });
-  const accepted = (): Record<string, string[]> => ({ ...policy.modelEfforts, ...(draft.modelEfforts ?? {}) });
+  /** What each model accepts, as read from OpenRouter (nobody types it in). A model not listed: not read yet. */
+  const accepted = (): Record<string, string[]> => policy.modelEfforts ?? {};
   /** The effort this role asks for: its own setting, else the role's default (which the API really uses, never "nothing"). */
   const askedFor = (role: ModelRole): ReasoningEffort => efforts()[role] ?? overview.defaults.reasoningEfforts[role];
   /**
@@ -97,10 +99,6 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
     const known = overview.models.find((entry) => entry.modelRowId === id);
     if (known) return { label: `${known.displayName} (${known.providerSlug}/${known.modelId})`, off: known.enabled === false };
     return { label: 'A saved model that is no longer in the model list', off: false };
-  };
-  const toggleAccepted = (modelId: string, effort: string) => {
-    const current = accepted()[modelId] ?? [];
-    set({ modelEfforts: { ...accepted(), [modelId]: current.includes(effort) ? current.filter((entry) => entry !== effort) : [...current, effort] } });
   };
 
   const save = () => {
@@ -209,38 +207,33 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
                 )}
               </div>
               <div className="space-y-1">
-                <Label htmlFor={`${role}-effort`}>Reasoning effort asked for</Label>
+                <Label htmlFor={`${role}-effort`}>Reasoning effort</Label>
                 <Select value={effort} disabled={!canWrite} onValueChange={(next) => set({ reasoningEfforts: { ...efforts(), [role]: next as ReasoningEffort } })}>
                   <SelectTrigger id={`${role}-effort`} aria-label={`${title} reasoning effort`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {EFFORTS.map((entry) => (
+                    {EFFORTS.filter((entry) => entry === effort || entry === 'default' || acceptedList === null || acceptedList.includes(entry)).map((entry) => (
                       <SelectItem key={entry} value={entry}>
                         {EFFORT_LABEL(entry)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {efforts()[role] === undefined && <p className="text-xs text-muted-foreground">Not set: this role asks for “{overview.defaults.reasoningEfforts[role]}”.</p>}
+                {efforts()[role] === undefined && <p className="text-xs text-muted-foreground">Not set: this role uses “{overview.defaults.reasoningEfforts[role]}”.</p>}
+                <p className="text-xs text-muted-foreground" data-testid={`${role}-accepts`}>
+                  {chosen === null
+                    ? 'No model chosen.'
+                    : acceptedList === null
+                      ? 'This model’s efforts are not read yet: they are read from OpenRouter when you save, or press “Read efforts from OpenRouter”.'
+                      : acceptedList.length === 0
+                        ? 'This model takes no reasoning effort: nothing is sent to it.'
+                        : `This model accepts (read from OpenRouter): ${EFFORT_SCALE.filter((entry) => acceptedList.includes(entry)).join(', ') || 'none of these'}.`}
+                </p>
                 <p className="text-xs" data-testid={`${role}-sends`}>
-                  {chosen === null ? 'No model chosen.' : sends === 'default' ? (acceptedList ? 'Sends nothing: this model accepts none of these efforts.' : 'Sends nothing: the efforts this model accepts are not recorded below.') : sends === effort ? `Sends: ${sends}.` : `Sends: ${sends} (the model does not accept ${effort}).`}
+                  {chosen === null ? '' : sends === 'default' ? 'Sends nothing: the provider decides.' : sends === effort ? `Sends: ${sends}.` : `Sends: ${sends} (the model does not accept ${effort}, so the nearest it accepts).`}
                 </p>
               </div>
-              {chosen !== null && (
-                <div className="space-y-1 sm:col-span-2">
-                  <Label>Reasoning efforts this model accepts</Label>
-                  <div className="flex flex-wrap gap-4">
-                    {EFFORT_SCALE.map((entry) => (
-                      <label key={entry} className="flex items-center gap-2 text-sm">
-                        <input type="checkbox" aria-label={`${title} accepts ${entry}`} disabled={!canWrite} checked={Boolean(acceptedList?.includes(entry))} onChange={() => toggleAccepted(chosen, entry)} />
-                        {entry}
-                      </label>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Copy them from the model's page on OpenRouter. A request never carries an effort that is not ticked here.</p>
-                </div>
-              )}
             </div>
           </Card>
         );
@@ -279,6 +272,20 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
         {canWrite && (
           <Button disabled={!dirty || update.isPending} onClick={save}>
             Save routing policy
+          </Button>
+        )}
+        {canWrite && (
+          <Button
+            variant="outline"
+            disabled={syncEfforts.isPending}
+            onClick={() =>
+              syncEfforts.mutate(undefined, {
+                onSuccess: (result) => notify(result.unknown.length > 0 ? `Read the reasoning efforts of ${result.synced} model(s). Not in OpenRouter's list: ${result.unknown.join(', ')}.` : `Read the reasoning efforts of ${result.synced} model(s).`, result.unknown.length > 0 ? 'warning' : 'success'),
+                onError: (error) => notify(apiErrorMessage(error, 'OpenRouter could not be read.'), 'error'),
+              })
+            }
+          >
+            <RefreshCw className="mr-2 size-4" aria-hidden /> Read efforts from OpenRouter
           </Button>
         )}
         <Button variant="outline" disabled={validate.isPending} onClick={() => validate.mutate(undefined, { onSuccess: (result) => setProblems(result.problems), onError: (error) => notify(apiErrorMessage(error, 'The change was refused.'), 'error') })}>
