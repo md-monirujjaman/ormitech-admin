@@ -21,6 +21,24 @@ const markup = z
   .refine((value) => places(value) <= 4, 'At most 4 decimal places')
   .refine((value) => !isDecimal(value) || toUnits(value, 4) <= 10_000n * 10_000n, 'At most 10000');
 
+/** A plan's API budget (USD) and markup. Empty means not decided. */
+export const planBudgetSchema = z
+  .object({
+    usdBudget: z
+      .string()
+      .trim()
+      .refine((value) => value === '' || (/^\d{1,12}(\.\d{1,6})?$/.test(value) && !isZero(value)), 'A positive USD amount with up to 6 decimal places'),
+    markupPercent: z.union([z.literal(''), markup]),
+  })
+  .superRefine((value, context) => {
+    if (value.usdBudget === '' && value.markupPercent === '') context.addIssue({ code: 'custom', path: ['usdBudget'], message: 'Set a budget or a markup, or remove the plan’s settings instead' });
+  });
+export type PlanBudgetForm = z.infer<typeof planBudgetSchema>;
+
+export const grantSchema = z.object({
+  reason: z.string().trim().min(3, 'Say why, in at least 3 characters').max(300, 'Keep the reason under 300 characters'),
+});
+
 export const ROUNDING_LABEL: Record<string, string> = {
   ceil: 'Round up (ceil)',
   floor: 'Round down (floor)',
@@ -30,7 +48,6 @@ export const ROUNDING_LABEL: Record<string, string> = {
 
 export const financialSchema = z.object({
   creditValueUsd: optional(creditValue),
-  markupPercentage: optional(markup),
   roundingMode: z.union([z.literal(''), z.enum(['ceil', 'floor', 'half_up', 'half_even'])]),
   decimalPlaces: optional(z.string().trim().regex(/^[0-8]$/, 'A whole number from 0 to 8')),
 });

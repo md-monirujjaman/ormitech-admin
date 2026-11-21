@@ -22,6 +22,7 @@ function serve() {
     if (path === '/admin/ai/credit-settings') return ok(settings());
     if (path === '/admin/ai/credit-settings/pilot-workspaces') return ok([pilotRow()]);
     if (path === '/admin/ai/credit-settings/workspace-limits') return ok(limitsList([]));
+    if (path === '/admin/ai/credit-plans') return ok({ conversion: { ready: false, missing: ['creditValueUsd'] }, items: [] });
     if (path === '/admin/ai/credit-dashboard') return ok(dashboard());
     if (path === '/admin/ai/credit-operations') return ok({ costUnit: { verified: false, unit: null }, items: [], nextCursor: null });
     throw new Error(`unexpected GET ${path}`);
@@ -36,10 +37,10 @@ describe('the credit system page', () => {
     serve();
   });
 
-  it('opens on the dashboard, with the four areas as tabs and the credit mode said to be off unless changed', async () => {
+  it('opens on the dashboard, with the five areas as tabs and the credit mode said to be off unless changed', async () => {
     renderWithClient(<CreditSystemPage />);
     expect(screen.getByRole('tab', { name: 'Dashboard' }).getAttribute('data-state')).toBe('active');
-    for (const name of ['Operations', 'Settings', 'Workspace limits']) expect(screen.getByRole('tab', { name: name })).toBeTruthy();
+    for (const name of ['Operations', 'Plans & budgets', 'Settings', 'Workspace limits']) expect(screen.getByRole('tab', { name: name })).toBeTruthy();
     expect(screen.getByText(/Credit mode is off unless you change it/)).toBeTruthy();
     expect(await screen.findByText('Credits issued')).toBeTruthy();
   });
@@ -55,14 +56,14 @@ describe('the credit system page', () => {
     renderWithClient(<CreditSystemPage />);
     await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
     expect(await screen.findByText('Financial settings')).toBeTruthy();
-    await userEvent.type(await screen.findByLabelText('Markup (percent)'), '5');
+    await userEvent.type(await screen.findByLabelText('Decimal places of the debit'), '5');
     expect(await screen.findByText('Unsaved changes')).toBeTruthy();
     await userEvent.click(screen.getByRole('tab', { name: 'Dashboard' }));
     const dialog = await screen.findByRole('alertdialog');
     expect(within(dialog).getByText('Leave with unsaved changes?')).toBeTruthy();
     // Staying keeps what was typed.
     await userEvent.click(within(dialog).getByRole('button', { name: 'Stay' }));
-    expect((screen.getByLabelText('Markup (percent)') as HTMLInputElement).value).toBe('5');
+    expect((screen.getByLabelText('Decimal places of the debit') as HTMLInputElement).value).toBe('5');
     await userEvent.click(screen.getByRole('tab', { name: 'Dashboard' }));
     await userEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Discard and leave' }));
     expect(await screen.findByText('Credits issued')).toBeTruthy();
@@ -80,7 +81,7 @@ describe('the credit system page', () => {
   it('asks the browser to confirm closing the page while something is unsaved, and stops once it is not', async () => {
     renderWithClient(<CreditSystemPage />);
     await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
-    const markup = await screen.findByLabelText('Markup (percent)');
+    const markup = await screen.findByLabelText('Decimal places of the debit');
     const attempt = () => {
       const event = new Event('beforeunload', { cancelable: true });
       window.dispatchEvent(event);
@@ -100,7 +101,7 @@ describe('the credit system page', () => {
     await screen.findByText('Financial settings');
     expect(screen.queryByRole('button', { name: 'Review changes' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add to pilot' })).toBeNull();
-    expect((await screen.findByLabelText('Markup (percent)') as HTMLInputElement).disabled).toBe(true);
+    expect((await screen.findByLabelText('Decimal places of the debit') as HTMLInputElement).disabled).toBe(true);
   });
 });
 

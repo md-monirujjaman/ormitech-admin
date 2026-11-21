@@ -10,11 +10,12 @@ import { DashboardTab } from '../components/DashboardTab';
 import { FilterBar } from '../components/FilterBar';
 import { LimitsTab } from '../components/LimitsTab';
 import { OperationsTab } from '../components/OperationsTab';
+import { PlansTab } from '../components/PlansTab';
 import { SettingsTab } from '../components/SettingsTab';
 import { defaultPeriod, periodToFilters, type FilterDraft } from '../period';
 import type { Filters } from '../types';
 
-type TabName = 'dashboard' | 'operations' | 'settings' | 'limits';
+type TabName = 'dashboard' | 'operations' | 'plans' | 'settings' | 'limits';
 
 const blankDraft = (): FilterDraft => ({ ...defaultPeriod(), organizationId: '', kind: '', model: '', status: '' });
 
@@ -75,6 +76,7 @@ export default function CreditSystemPage() {
         <TabsList>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="operations">Operations</TabsTrigger>
+          <TabsTrigger value="plans">Plans & budgets</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="limits">Workspace limits</TabsTrigger>
         </TabsList>
@@ -96,6 +98,9 @@ export default function CreditSystemPage() {
         </TabsContent>
         <TabsContent value="operations" className="mt-4">
           <OperationsTab filters={filters} />
+        </TabsContent>
+        <TabsContent value="plans" className="mt-4">
+          <PlansTab canWrite={canWrite} />
         </TabsContent>
         <TabsContent value="settings" className="mt-4">
           <SettingsTab canWrite={canWrite} onDirtyChange={onDirtyChange} />

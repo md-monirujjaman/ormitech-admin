@@ -1,12 +1,14 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { creditSystemApi } from './creditSystemApi';
-import type { CostUnitInput, CreditMode, Filters, FinancialInput, LimitsInput } from './types';
+import type { CostUnitInput, CreditMode, Filters, FinancialInput, GrantBudgetInput, LimitsInput, PlanBudgetInput } from './types';
 
 export const systemKeys = {
   all: ['credit-system'] as const,
   settings: ['credit-system', 'settings'] as const,
   pilot: ['credit-system', 'pilot'] as const,
   limits: ['credit-system', 'limits'] as const,
+  plans: ['credit-system', 'plans'] as const,
+  workspace: (organizationId: string) => ['credit-system', 'workspace', organizationId] as const,
   dashboard: (filters: Filters) => ['credit-system', 'dashboard', filters] as const,
   operations: (filters: Filters) => ['credit-system', 'operations', filters] as const,
   turn: (turnId: string) => ['credit-system', 'turn', turnId] as const,
@@ -15,6 +17,8 @@ export const systemKeys = {
 export const useCreditSettings = () => useQuery({ queryKey: systemKeys.settings, queryFn: creditSystemApi.settings, retry: false });
 export const usePilotWorkspaces = () => useQuery({ queryKey: systemKeys.pilot, queryFn: creditSystemApi.pilotWorkspaces, retry: false });
 export const useWorkspaceLimits = () => useQuery({ queryKey: systemKeys.limits, queryFn: creditSystemApi.limits, retry: false });
+export const usePlanBudgets = () => useQuery({ queryKey: systemKeys.plans, queryFn: creditSystemApi.plans, retry: false });
+export const useWorkspaceBudget = (organizationId: string | null) => useQuery({ queryKey: systemKeys.workspace(organizationId ?? ''), queryFn: () => creditSystemApi.workspaceBudget(organizationId!), enabled: Boolean(organizationId), retry: false });
 export const useCreditDashboard = (filters: Filters) => useQuery({ queryKey: systemKeys.dashboard(filters), queryFn: () => creditSystemApi.dashboard(filters), retry: false });
 export const useTurn = (turnId: string | null) => useQuery({ queryKey: systemKeys.turn(turnId ?? ''), queryFn: () => creditSystemApi.turn(turnId!), enabled: Boolean(turnId), retry: false });
 
@@ -44,4 +48,7 @@ export const useAddPilotWorkspace = () => useSettingsMutation((input: { organiza
 export const useRemovePilotWorkspace = () => useSettingsMutation((organizationId: string) => creditSystemApi.removePilotWorkspace(organizationId));
 export const useSaveLimits = () => useSettingsMutation((input: { organizationId: string; limits: LimitsInput }) => creditSystemApi.saveLimits(input.organizationId, input.limits));
 export const useRemoveLimits = () => useSettingsMutation((organizationId: string) => creditSystemApi.removeLimits(organizationId));
-export const usePreview = () => useMutation({ mutationFn: (verifiedCostUsd: string) => creditSystemApi.preview(verifiedCostUsd) });
+export const usePreview = () => useMutation({ mutationFn: (input: { verifiedCostUsd: string; planId: string }) => creditSystemApi.preview(input.verifiedCostUsd, input.planId) });
+export const useSavePlanBudget = () => useSettingsMutation((input: { planId: string; plan: PlanBudgetInput }) => creditSystemApi.savePlan(input.planId, input.plan));
+export const useRemovePlanBudget = () => useSettingsMutation((planId: string) => creditSystemApi.removePlan(planId));
+export const useGrantBudget = () => useSettingsMutation((input: { organizationId: string; grant: GrantBudgetInput }) => creditSystemApi.grantBudget(input.organizationId, input.grant));
