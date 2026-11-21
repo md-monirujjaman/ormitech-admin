@@ -34,6 +34,8 @@ export const ROUTES = {
   ai: '/ai',
   /** AI providers, their keys, the model catalogue, prices and which plans may use each model. */
   aiProviders: '/ai/providers',
+  /** The credit system: financial settings, pilot allowlist, workspace limits, dashboard and operations. */
+  aiCreditSystem: '/ai/credit-system',
   channels: '/channels',
 
   billing: '/billing',

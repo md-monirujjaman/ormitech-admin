@@ -43,6 +43,7 @@ const PricingPage = lazy(() => import('@/features/pricing/pages/PricingPage'));
 const DocsPage = lazy(() => import('@/features/docs/pages/DocsPage'));
 const BlogPage = lazy(() => import('@/features/blog/pages/BlogPage'));
 const AiProvidersPage = lazy(() => import('@/features/ai-catalog/pages/AiProvidersPage'));
+const CreditSystemPage = lazy(() => import('@/features/credit-system/pages/CreditSystemPage'));
 const BlogEditorPage = lazy(() => import('@/features/blog/pages/BlogEditorPage'));
 const RolesPage = lazy(() => import('@/features/roles/pages/RolesPage'));
 
@@ -56,6 +57,7 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.channels,
   ROUTES.ai,
   ROUTES.aiProviders,
+  ROUTES.aiCreditSystem,
   ROUTES.billing,
   ROUTES.subscriptions,
   ROUTES.payments,
@@ -262,6 +264,17 @@ export function AppRoutes() {
               <AdminRoute permission="ai_providers.read">
                 <Lazy label="Loading AI providers…">
                   <AiProvidersPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.aiCreditSystem}
+            element={
+              <AdminRoute permission="ai_credits.read">
+                <Lazy label="Loading the credit system…">
+                  <CreditSystemPage />
                 </Lazy>
               </AdminRoute>
             }

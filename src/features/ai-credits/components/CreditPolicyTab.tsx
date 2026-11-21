@@ -106,7 +106,7 @@ export function CreditPolicyTab({ canWrite }: { canWrite: boolean }) {
         <CardHeader>
           <CardTitle>Credit policy</CardTitle>
           <CardDescription>
-            How the provider’s cost becomes credits, and whether credits are counted at all.
+            How the provider’s cost becomes credits, and whether credits are counted at all. The credit value in USD, the markup on verified AI cost, rounding, precision, the cost unit, the pilot allowlist and the workspace limits are on the <strong>Credit System</strong> page in the sidebar.
           </CardDescription>
           <div>
             <Badge variant={policy.conversionDecided ? 'success' : 'outline'}>{policy.conversionDecided ? 'Conversion decided' : 'Conversion not decided'}</Badge>
