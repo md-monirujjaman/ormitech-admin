@@ -1,5 +1,5 @@
 import { axiosClient } from '@/api/axiosClient';
-import type { CostUnitInput, CreditMode, CreditSettings, Dashboard, FinancialInput, Filters, GrantBudgetInput, LimitsInput, LimitsList, OperationsPage, PilotWorkspace, PlanBudgetInput, PlanBudgetList, ModelVerificationList, Preview, TurnDetail, VerifyModelInput, WorkspaceBudget, WorkspaceHit } from './types';
+import type { CostUnitInput, HoldInput, CreditMode, CreditSettings, Dashboard, FinancialInput, Filters, GrantBudgetInput, LimitsInput, LimitsList, OperationsPage, PilotWorkspace, PlanBudgetInput, PlanBudgetList, ModelVerificationList, Preview, TurnDetail, VerifyModelInput, WorkspaceBudget, WorkspaceHit } from './types';
 
 const unwrap = <T>(promise: Promise<{ data: { data: T } }>) => promise.then((response) => response.data.data);
 const BASE = '/admin/ai/credit-settings';
@@ -14,6 +14,7 @@ const params = (filters: Filters, extra: Record<string, string | number> = {}): 
 export const creditSystemApi = {
   settings: () => unwrap<CreditSettings>(axiosClient.get(BASE)),
   saveFinancial: (input: FinancialInput) => unwrap<CreditSettings>(axiosClient.put(`${BASE}/financial`, input)),
+  saveHold: (input: HoldInput) => unwrap<CreditSettings>(axiosClient.put(`${BASE}/hold`, input)),
   saveCostUnit: (input: CostUnitInput) => unwrap<CreditSettings>(axiosClient.put(`${BASE}/cost-unit`, input)),
   preview: (verifiedCostUsd: string, planId: string) => unwrap<Preview>(axiosClient.post(`${BASE}/preview`, { verifiedCostUsd, planId })),
   setPilotRestriction: (expectedVersion: number, enabled: boolean) => unwrap<CreditSettings>(axiosClient.put(`${BASE}/pilot-restriction`, { expectedVersion, enabled })),

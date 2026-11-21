@@ -239,7 +239,7 @@ describe('ModeCard', () => {
   it('lists what enforce needs, marks what is missing, and does not offer enforce until all of it is met', async () => {
     renderWithClient(<ModeCard canWrite onDirtyChange={noop} />);
     const list = await screen.findByLabelText('Enforce readiness');
-    expect(within(list).getAllByLabelText('Not met')).toHaveLength(3);
+    expect(within(list).getAllByLabelText('Not met')).toHaveLength(4);
     expect(within(list).getByLabelText('Advice, not met')).toBeTruthy();
     await userEvent.click(screen.getByRole('combobox', { name: 'Platform mode' }));
     expect(await screen.findByRole('option', { name: 'Enforce (not ready)' })).toHaveProperty('ariaDisabled', 'true');

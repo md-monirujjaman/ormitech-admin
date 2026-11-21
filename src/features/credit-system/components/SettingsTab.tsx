@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { ModelVerificationCard } from './ModelVerificationCard';
 import { FinancialCard } from './FinancialCard';
+import { HoldCard } from './HoldCard';
 import { ModeCard } from './ModeCard';
 import { PilotCard } from './PilotCard';
 
@@ -8,11 +9,13 @@ import { PilotCard } from './PilotCard';
 export function SettingsTab({ canWrite, onDirtyChange }: { canWrite: boolean; onDirtyChange: (source: string, dirty: boolean) => void }) {
   // Stable functions: each card reports its unsaved state in an effect, and a new function every render would re-run it.
   const financial = useCallback((dirty: boolean) => onDirtyChange('financial', dirty), [onDirtyChange]);
+  const hold = useCallback((dirty: boolean) => onDirtyChange('hold', dirty), [onDirtyChange]);
   const mode = useCallback((dirty: boolean) => onDirtyChange('mode', dirty), [onDirtyChange]);
   const pilot = useCallback((dirty: boolean) => onDirtyChange('pilot', dirty), [onDirtyChange]);
   return (
     <div className="space-y-6">
       <FinancialCard canWrite={canWrite} onDirtyChange={financial} />
+      <HoldCard canWrite={canWrite} onDirtyChange={hold} />
       <ModelVerificationCard canWrite={canWrite} />
       <ModeCard canWrite={canWrite} onDirtyChange={mode} />
       <PilotCard canWrite={canWrite} onDirtyChange={pilot} />

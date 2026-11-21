@@ -15,7 +15,7 @@ export interface FinancialValues {
 }
 
 export interface ReadinessCheck {
-  key: 'financial_settings' | 'cost_unit_verified' | 'recovery_confirmed' | 'pilot_restricted';
+  key: 'financial_settings' | 'hold_decided' | 'model_verified' | 'recovery_confirmed' | 'pilot_restricted';
   required: boolean;
   ok: boolean;
   detail: string;
@@ -26,6 +26,8 @@ export interface CreditSettings {
   version: number;
   financial: FinancialValues & { complete: boolean; missing: string[] };
   costUnit: { unit: string | null; usdFactor: string | null; verifiedAt: string | null; verifiedBy: string | null; evidence: string | null; verified: boolean };
+  /** The fixed credit hold made before every AI call. Null = not decided. */
+  hold: { turnHoldCredits: string | null };
   mode: { platform: CreditMode; explanation: Record<CreditMode, string>; recoveryConfirmed: boolean };
   pilot: { restricted: boolean; workspaces: number; max: number };
   enforceReadiness: { ready: boolean; checks: ReadinessCheck[] };
@@ -48,6 +50,11 @@ export interface FinancialInput {
   creditValueUsd: string | null;
   roundingMode: RoundingMode | null;
   decimalPlaces: number | null;
+}
+
+export interface HoldInput {
+  expectedVersion: number;
+  turnHoldCredits: string | null;
 }
 
 export interface CostUnitInput {

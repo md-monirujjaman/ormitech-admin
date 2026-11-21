@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { creditSystemApi } from './creditSystemApi';
-import type { VerifyModelInput, CostUnitInput, CreditMode, Filters, FinancialInput, GrantBudgetInput, LimitsInput, PlanBudgetInput } from './types';
+import type { HoldInput, VerifyModelInput, CostUnitInput, CreditMode, Filters, FinancialInput, GrantBudgetInput, LimitsInput, PlanBudgetInput } from './types';
 
 export const systemKeys = {
   all: ['credit-system'] as const,
@@ -45,6 +45,7 @@ function useSettingsMutation<TInput, TResult>(run: (input: TInput) => Promise<TR
 }
 
 export const useSaveFinancial = () => useSettingsMutation((input: FinancialInput) => creditSystemApi.saveFinancial(input));
+export const useSaveHold = () => useSettingsMutation((input: HoldInput) => creditSystemApi.saveHold(input));
 export const useSaveCostUnit = () => useSettingsMutation((input: CostUnitInput) => creditSystemApi.saveCostUnit(input));
 export const useSetMode = () => useSettingsMutation((mode: CreditMode) => creditSystemApi.setMode(mode));
 export const useSetPilotRestriction = () => useSettingsMutation((input: { expectedVersion: number; enabled: boolean }) => creditSystemApi.setPilotRestriction(input.expectedVersion, input.enabled));
