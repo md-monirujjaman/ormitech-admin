@@ -137,6 +137,22 @@ export function RoutingTab({ canWrite, notify }: { canWrite: boolean; notify: No
         </div>
       </Card>
 
+      <Card className="space-y-3 p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <h3 className="font-medium">Understand first</h3>
+          <Badge variant={overview.effective.understandFirstActive ? 'success' : 'secondary'}>{overview.effective.understandFirstActive ? 'Understand first is active' : 'Understand first is not active'}</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Model 1 first works out what the customer wants and what step the chat is at (from the chat, the saved memory and the business data), then the model that answers is given that and returns only the reply. It is one extra short Model 1 request per customer message; greetings and thank-yous are skipped, and if it fails the reply goes out as it does with this off. Works only while routing is on.
+        </p>
+        <div className="flex items-center gap-3">
+          <Switch id="understand-first" aria-label="Understand first" checked={Boolean(value('understandFirst'))} disabled={!canWrite || policy.understandFirstAvailable === false} onCheckedChange={(understandFirst) => set({ understandFirst })} />
+          <Label htmlFor="understand-first">Model 1 understands first, then the right model replies</Label>
+        </div>
+        {policy.understandFirstAvailable === false && <p className="text-xs text-destructive">This needs the API database update 0081, which has not been applied yet, so the switch cannot be changed.</p>}
+        {value('understandFirst') && !value('enabled') && <p className="text-xs text-destructive">Switch routing on as well: this has no effect while routing is off.</p>}
+      </Card>
+
       {ROLES.map(({ role, field, enabled, title, hint }) => {
         const chosen = (value(field) as string | null) ?? null;
         const saved = ((policy as unknown as Record<string, unknown>)[field] as string | null | undefined) ?? null;
