@@ -22,6 +22,7 @@ function serve() {
     if (path === '/admin/ai/credit-settings') return ok(settings());
     if (path === '/admin/ai/credit-settings/pilot-workspaces') return ok([pilotRow()]);
     if (path === '/admin/ai/credit-settings/workspace-limits') return ok(limitsList([]));
+    if (path === '/admin/ai/credit-settings/model-verifications') return ok({ models: [], history: [] });
     if (path === '/admin/ai/credit-plans') return ok({ conversion: { ready: false, missing: ['creditValueUsd'] }, items: [] });
     if (path === '/admin/ai/credit-dashboard') return ok(dashboard());
     if (path === '/admin/ai/credit-operations') return ok({ costUnit: { verified: false, unit: null }, items: [], nextCursor: null });

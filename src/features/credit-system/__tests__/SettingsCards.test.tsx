@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { axiosClient } from '@/api/axiosClient';
 import { apiFailure, ok, renderWithClient } from '@/features/ai-catalog/__tests__/testUtils';
-import { CostUnitCard } from '../components/CostUnitCard';
+import { ModelVerificationCard } from '../components/ModelVerificationCard';
 import { FinancialCard } from '../components/FinancialCard';
 import { ModeCard } from '../components/ModeCard';
 import { PilotCard } from '../components/PilotCard';
@@ -149,57 +149,76 @@ describe('FinancialCard', () => {
   });
 });
 
-describe('CostUnitCard', () => {
+const GEN = 'gen-1795284911-TFxY8C9mo1RlvyRGjPyy';
+const luna = { id: 'v1', modelId: 'openai/gpt-6-luna', costUnit: 'openrouter_credits', usdFactor: '1', evidence: 'usage.cost, total_cost and key usage agree', generationIds: [GEN], verifiedBy: 'a1', verifiedAt: '2026-11-22T09:00:00.000Z', status: 'verified' as const, revokedAt: null, revokedBy: null, revokeReason: null };
+const models = (verified = false) => ({ models: [{ modelId: 'openai/gpt-6-luna', displayName: 'GPT-6 Luna', verification: verified ? luna : null }, { modelId: 'z-ai/glm-5.3-flash', displayName: 'GLM', verification: null }], history: verified ? [luna] : [] });
+
+describe('ModelVerificationCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    serve();
+    http.get.mockImplementation(async () => ok(models()));
   });
 
-  it('says the unit is not assumed to be USD until it is verified', async () => {
-    renderWithClient(<CostUnitCard canWrite onDirtyChange={noop} />);
-    expect(await screen.findByText('Not verified')).toBeTruthy();
-    expect(screen.getByText(/not assumed to be US dollars/)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Clear verification' })).toBeNull();
-    expect(input('Unit the provider reports').placeholder).toBe('e.g. openrouter_credits');
-    expect(input('Unit the provider reports').value).toBe('');
+  it('shows every model unverified until it is verified, and says the cost is not assumed to be USD', async () => {
+    renderWithClient(<ModelVerificationCard canWrite />);
+    expect(await screen.findByText(/not assumed to be US dollars/)).toBeTruthy();
+    expect(screen.getAllByText('Unverified')).toHaveLength(2);
   });
 
-  it('refuses a verification without evidence and asks the API nothing', async () => {
-    renderWithClient(<CostUnitCard canWrite onDirtyChange={noop} />);
-    await screen.findByText('Not verified');
+  it('shows one verified model with its evidence and generation ids, and the other still unverified', async () => {
+    http.get.mockImplementation(async () => ok(models(true)));
+    renderWithClient(<ModelVerificationCard canWrite />);
+    expect(await screen.findByText('Verified: 1 openrouter_credits = 1 USD')).toBeTruthy();
+    expect(screen.getByText(GEN)).toBeTruthy();
+    expect(screen.getByText('usage.cost, total_cost and key usage agree')).toBeTruthy();
+    expect(screen.getAllByText('Unverified')).toHaveLength(1);
+  });
+
+  it('refuses a verification without evidence or generation ids, and asks the API nothing', async () => {
+    renderWithClient(<ModelVerificationCard canWrite />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Verify openai/gpt-6-luna' }));
     await userEvent.type(input('Unit the provider reports'), 'openrouter_credits');
     await userEvent.type(input('USD per one unit'), '1');
     await userEvent.click(screen.getByRole('button', { name: 'Review' }));
-    expect(await screen.findByText(/A verification without evidence is not recorded/)).toBeTruthy();
-    expect(http.put).not.toHaveBeenCalled();
+    expect(await screen.findByText(/List the generation ids/)).toBeTruthy();
+    expect(screen.getByText(/A verification without evidence is not recorded/)).toBeTruthy();
+    expect(http.post).not.toHaveBeenCalled();
   });
 
-  it('records a verification after a confirmation that says what it does', async () => {
-    http.put.mockResolvedValue(ok(decided({ costUnit: verifiedUnit })));
-    renderWithClient(<CostUnitCard canWrite onDirtyChange={noop} />);
-    await screen.findByText('Not verified');
-    await userEvent.type(input('Unit the provider reports'), 'fixture_unit');
-    await userEvent.type(input('USD per one unit'), '0.5');
-    await userEvent.type(screen.getByLabelText('How it was verified'), 'Compared with a recorded response in a test.');
+  it('records the verification for that model only, after a confirmation that says so', async () => {
+    http.post.mockResolvedValue(ok(models(true)));
+    renderWithClient(<ModelVerificationCard canWrite />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Verify openai/gpt-6-luna' }));
+    await userEvent.type(input('Unit the provider reports'), 'openrouter_credits');
+    await userEvent.type(input('USD per one unit'), '1');
+    await userEvent.type(input('Generation ids'), `${GEN} gen-2-abc`);
+    await userEvent.type(screen.getByLabelText('How it was verified'), 'usage.cost, total_cost and key usage agree');
     await userEvent.click(screen.getByRole('button', { name: 'Review' }));
     const dialog = await screen.findByRole('alertdialog');
-    expect(within(dialog).getByText(/treated as USD at this factor/)).toBeTruthy();
+    expect(within(dialog).getByText(/Every other model stays unverified/)).toBeTruthy();
+    expect(http.post).not.toHaveBeenCalled();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Record verification' }));
-    await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/credit-settings/cost-unit', { expectedVersion: 0, unit: 'fixture_unit', usdFactor: '0.5', evidence: 'Compared with a recorded response in a test.' }));
-    expect(await screen.findByText('The verification was recorded.')).toBeTruthy();
+    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/admin/ai/credit-settings/model-verifications', { modelId: 'openai/gpt-6-luna', costUnit: 'openrouter_credits', usdFactor: '1', evidence: 'usage.cost, total_cost and key usage agree', generationIds: [GEN, 'gen-2-abc'] }));
+    expect(await screen.findByText('openai/gpt-6-luna is verified.')).toBeTruthy();
   });
 
-  it('shows a recorded verification with its evidence, and clears it only after confirming', async () => {
-    serve(decided({ costUnit: verifiedUnit }));
-    http.put.mockResolvedValue(ok(decided()));
-    renderWithClient(<CostUnitCard canWrite onDirtyChange={noop} />);
-    expect(await screen.findByText(/Verified: 1 fixture_unit = 0.5 USD/)).toBeTruthy();
-    expect(screen.getByText('Compared with a recorded response in a test.')).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: 'Clear verification' }));
+  it('revokes only with a reason, after confirming', async () => {
+    http.get.mockImplementation(async () => ok(models(true)));
+    http.post.mockResolvedValue(ok(models()));
+    renderWithClient(<ModelVerificationCard canWrite />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Revoke openai/gpt-6-luna' }));
     const dialog = await screen.findByRole('alertdialog');
-    expect(http.put).not.toHaveBeenCalled();
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Clear verification' }));
-    await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/credit-settings/cost-unit', { expectedVersion: 3, unit: null, usdFactor: null, evidence: null }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Revoke' }));
+    expect(http.post).not.toHaveBeenCalled();
+    await userEvent.type(within(dialog).getByLabelText('Reason'), 'factor was wrong');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Revoke' }));
+    await waitFor(() => expect(http.post).toHaveBeenCalledWith('/admin/ai/credit-settings/model-verifications/v1/revoke', { reason: 'factor was wrong' }));
+  });
+
+  it('is read-only without the permission', async () => {
+    renderWithClient(<ModelVerificationCard canWrite={false} />);
+    await screen.findByText(/not assumed to be US dollars/);
+    expect(screen.queryByRole('button', { name: /Verify/ })).toBeNull();
   });
 });
 

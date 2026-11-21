@@ -262,3 +262,31 @@ export interface GrantBudgetInput {
   reason: string;
   idempotencyKey: string;
 }
+
+export interface ModelVerification {
+  id: string;
+  modelId: string;
+  costUnit: string;
+  usdFactor: string | null;
+  evidence: string;
+  generationIds: string[];
+  verifiedBy: string;
+  verifiedAt: string;
+  status: 'verified' | 'revoked';
+  revokedAt: string | null;
+  revokedBy: string | null;
+  revokeReason: string | null;
+}
+
+export interface ModelVerificationList {
+  models: Array<{ modelId: string; displayName: string; verification: ModelVerification | null }>;
+  history: ModelVerification[];
+}
+
+export interface VerifyModelInput {
+  modelId: string;
+  costUnit: string;
+  usdFactor: string;
+  evidence: string;
+  generationIds: string[];
+}

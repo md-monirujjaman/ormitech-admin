@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { creditSystemApi } from './creditSystemApi';
-import type { CostUnitInput, CreditMode, Filters, FinancialInput, GrantBudgetInput, LimitsInput, PlanBudgetInput } from './types';
+import type { VerifyModelInput, CostUnitInput, CreditMode, Filters, FinancialInput, GrantBudgetInput, LimitsInput, PlanBudgetInput } from './types';
 
 export const systemKeys = {
   all: ['credit-system'] as const,
@@ -8,6 +8,7 @@ export const systemKeys = {
   pilot: ['credit-system', 'pilot'] as const,
   limits: ['credit-system', 'limits'] as const,
   plans: ['credit-system', 'plans'] as const,
+  verifications: ['credit-system', 'verifications'] as const,
   workspace: (organizationId: string) => ['credit-system', 'workspace', organizationId] as const,
   dashboard: (filters: Filters) => ['credit-system', 'dashboard', filters] as const,
   operations: (filters: Filters) => ['credit-system', 'operations', filters] as const,
@@ -17,6 +18,9 @@ export const systemKeys = {
 export const useCreditSettings = () => useQuery({ queryKey: systemKeys.settings, queryFn: creditSystemApi.settings, retry: false });
 export const usePilotWorkspaces = () => useQuery({ queryKey: systemKeys.pilot, queryFn: creditSystemApi.pilotWorkspaces, retry: false });
 export const useWorkspaceLimits = () => useQuery({ queryKey: systemKeys.limits, queryFn: creditSystemApi.limits, retry: false });
+export const useModelVerifications = () => useQuery({ queryKey: systemKeys.verifications, queryFn: creditSystemApi.modelVerifications, retry: false });
+export const useVerifyModel = () => useSettingsMutation((input: VerifyModelInput) => creditSystemApi.verifyModel(input));
+export const useRevokeModelVerification = () => useSettingsMutation((input: { id: string; reason: string }) => creditSystemApi.revokeModelVerification(input.id, input.reason));
 export const usePlanBudgets = () => useQuery({ queryKey: systemKeys.plans, queryFn: creditSystemApi.plans, retry: false });
 export const useWorkspaceBudget = (organizationId: string | null) => useQuery({ queryKey: systemKeys.workspace(organizationId ?? ''), queryFn: () => creditSystemApi.workspaceBudget(organizationId!), enabled: Boolean(organizationId), retry: false });
 export const useCreditDashboard = (filters: Filters) => useQuery({ queryKey: systemKeys.dashboard(filters), queryFn: () => creditSystemApi.dashboard(filters), retry: false });

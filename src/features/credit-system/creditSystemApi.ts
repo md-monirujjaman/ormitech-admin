@@ -1,5 +1,5 @@
 import { axiosClient } from '@/api/axiosClient';
-import type { CostUnitInput, CreditMode, CreditSettings, Dashboard, FinancialInput, Filters, GrantBudgetInput, LimitsInput, LimitsList, OperationsPage, PilotWorkspace, PlanBudgetInput, PlanBudgetList, Preview, TurnDetail, WorkspaceBudget, WorkspaceHit } from './types';
+import type { CostUnitInput, CreditMode, CreditSettings, Dashboard, FinancialInput, Filters, GrantBudgetInput, LimitsInput, LimitsList, OperationsPage, PilotWorkspace, PlanBudgetInput, PlanBudgetList, ModelVerificationList, Preview, TurnDetail, VerifyModelInput, WorkspaceBudget, WorkspaceHit } from './types';
 
 const unwrap = <T>(promise: Promise<{ data: { data: T } }>) => promise.then((response) => response.data.data);
 const BASE = '/admin/ai/credit-settings';
@@ -36,6 +36,10 @@ export const creditSystemApi = {
   searchWorkspaces: (q: string) => unwrap<WorkspaceHit[]>(axiosClient.get('/admin/ai/credit-budget/search', { params: { q } })),
   workspaceBudget: (organizationId: string) => unwrap<WorkspaceBudget>(axiosClient.get(`/admin/organizations/${organizationId}/ai-credit-budget`)),
   grantBudget: (organizationId: string, input: GrantBudgetInput) => unwrap<{ replay: boolean; credits: string }>(axiosClient.post(`/admin/organizations/${organizationId}/ai-credits/budget-grants`, input)),
+
+  modelVerifications: () => unwrap<ModelVerificationList>(axiosClient.get(`${BASE}/model-verifications`)),
+  verifyModel: (input: VerifyModelInput) => unwrap<ModelVerificationList>(axiosClient.post(`${BASE}/model-verifications`, input)),
+  revokeModelVerification: (id: string, reason: string) => unwrap<ModelVerificationList>(axiosClient.post(`${BASE}/model-verifications/${id}/revoke`, { reason })),
 
   /** The mode is the existing credit policy's: the same endpoint, the same audit, the same recovery rule. */
   setMode: (mode: CreditMode) => unwrap<unknown>(axiosClient.patch('/admin/ai/credit-policy', { mode })),
