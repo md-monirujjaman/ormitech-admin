@@ -46,6 +46,8 @@ const AiProvidersPage = lazy(() => import('@/features/ai-catalog/pages/AiProvide
 const CreditSystemPage = lazy(() => import('@/features/credit-system/pages/CreditSystemPage'));
 const BlogEditorPage = lazy(() => import('@/features/blog/pages/BlogEditorPage'));
 const RolesPage = lazy(() => import('@/features/roles/pages/RolesPage'));
+const EmailPage = lazy(() => import('@/features/email/pages/EmailPage'));
+const EmailTemplatePage = lazy(() => import('@/features/email/pages/EmailTemplatePage'));
 
 /** Routes with a real page — everything else in NAV_SECTIONS renders <ComingSoon> instead. */
 const IMPLEMENTED_ROUTES = new Set<string>([
@@ -74,6 +76,7 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.pricing,
   ROUTES.announcements,
   ROUTES.tutorials,
+  ROUTES.email,
   ROUTES.fastSupport,
   ROUTES.fastSupportModerators,
 ]);
@@ -351,6 +354,27 @@ export function AppRoutes() {
               <AdminRoute permission="blog.read">
                 <Lazy label="Loading article…">
                   <BlogEditorPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.email}
+            element={
+              <AdminRoute permission="email.read">
+                <Lazy label="Loading email…">
+                  <EmailPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+          <Route
+            path={`${ROUTES.emailTemplate}/:key`}
+            element={
+              <AdminRoute permission="email.read">
+                <Lazy label="Loading the template…">
+                  <EmailTemplatePage />
                 </Lazy>
               </AdminRoute>
             }

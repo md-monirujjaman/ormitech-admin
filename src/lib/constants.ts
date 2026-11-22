@@ -64,6 +64,8 @@ export const ROUTES = {
 
   settings: '/settings',
   email: '/email',
+  /** One template's editor: `/email/templates/<key>`. */
+  emailTemplate: '/email/templates',
   notifications: '/notifications',
   featureFlags: '/feature-flags',
 
