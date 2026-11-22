@@ -38,7 +38,7 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
   const save = useSaveFinancial();
   const preview = usePreview();
   const planQuery = usePlanBudgets();
-  const [planId, setPlanId] = useState('');
+  const [planSlug, setPlanSlug] = useState('');
   const [values, setValues] = useState<FinancialForm | null>(null);
   const [problems, setProblems] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<FinancialForm | null>(null);
@@ -86,8 +86,8 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
   const calculate = () => {
     if (!/^\d{1,12}(\.\d{1,14})?$/.test(cost.trim())) return setCostProblem('Enter a USD amount such as 0.008 (digits and one point)');
     setCostProblem(undefined);
-    if (!planId) return setCostProblem('Choose the plan whose markup to use');
-    preview.mutate({ verifiedCostUsd: cost.trim(), planId });
+    if (!planSlug) return setCostProblem('Choose the plan whose markup to use');
+    preview.mutate({ verifiedCostUsd: cost.trim(), planSlug });
   };
 
   const field = (key: 'creditValueUsd' | 'decimalPlaces', label: string, example: string, savedValue: string | null, hint: string, suffix = '') => (
@@ -204,13 +204,13 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="preview-plan">Plan (its markup is used)</Label>
-              <Select value={planId} onValueChange={setPlanId}>
+              <Select value={planSlug} onValueChange={setPlanSlug}>
                 <SelectTrigger id="preview-plan" aria-label="Plan" className="w-48">
                   <SelectValue placeholder="Choose a plan" />
                 </SelectTrigger>
                 <SelectContent>
                   {(planQuery.data?.items ?? []).map((plan) => (
-                    <SelectItem key={plan.planId} value={plan.planId} disabled={plan.markupPercent === null}>
+                    <SelectItem key={plan.slug} value={plan.slug} disabled={plan.markupPercent === null}>
                       {plan.name}
                       {plan.markupPercent === null ? ' (no markup set)' : ` (${plan.markupPercent}%)`}
                     </SelectItem>

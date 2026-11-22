@@ -43,7 +43,7 @@ function PlanDialog({ plan, onClose, onSaved }: { plan: PlanBudget | null; onClo
     if (!parsed.success) return setProblems(fieldErrors(parsed.error));
     setProblems({});
     save.mutate(
-      { planId: plan.planId, plan: { expectedVersion: plan.version, usdBudget: parsed.data.usdBudget === '' ? null : parsed.data.usdBudget, markupPercent: parsed.data.markupPercent === '' ? null : parsed.data.markupPercent } },
+      { slug: plan.slug, plan: { expectedVersion: plan.version, usdBudget: parsed.data.usdBudget === '' ? null : parsed.data.usdBudget, markupPercent: parsed.data.markupPercent === '' ? null : parsed.data.markupPercent } },
       { onSuccess: () => onSaved(`${plan.name}: the budget and markup were saved.`) },
     );
   };
@@ -117,7 +117,7 @@ function PlanConfiguration({ canWrite }: { canWrite: boolean }) {
           </TableHeader>
           <TableBody>
             {data.items.map((plan) => (
-              <TableRow key={plan.planId}>
+              <TableRow key={plan.slug}>
                 <TableCell>
                   <p className="font-medium">{plan.name}</p>
                   <p className="font-mono text-xs text-muted-foreground">{plan.slug}</p>
@@ -165,7 +165,7 @@ function PlanConfiguration({ canWrite }: { canWrite: boolean }) {
           confirmLabel="Remove"
           destructive
           isPending={remove.isPending}
-          onConfirm={() => remove.mutate(removing.planId, { onSuccess: () => { setRemoving(null); setNotice({ message: 'The plan’s budget and markup were removed.', tone: 'success' }); } })}
+          onConfirm={() => remove.mutate(removing.slug, { onSuccess: () => { setRemoving(null); setNotice({ message: 'The plan’s budget and markup were removed.', tone: 'success' }); } })}
         >
           {remove.error ? <Problem>{apiErrorMessage(remove.error, 'The settings could not be removed.')}</Problem> : null}
         </ConfirmDialog>

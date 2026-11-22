@@ -223,7 +223,6 @@ export interface TurnDetail {
 
 /** A plan's API budget in USD and its markup (Plan Configuration is the one source of the markup). Credits are derived by the API, never typed. */
 export interface PlanBudget {
-  planId: string;
   slug: string;
   name: string;
   status: string;
