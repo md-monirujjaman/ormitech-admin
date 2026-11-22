@@ -12,7 +12,7 @@ import { LoadFailed } from '@/features/ai-catalog/components/LoadFailed';
 import { apiErrorMessage } from '@/lib/apiError';
 import { canonical } from '../decimal';
 import { formatCredits, formatWhen } from '../format';
-import { useCreditSettings, usePreview, useSaveFinancial } from '../hooks';
+import { useCreditSettings, usePlanBudgets, usePreview, useSaveFinancial } from '../hooks';
 import { fieldErrors, financialSchema, ROUNDING_LABEL, type FinancialForm } from '../schemas';
 import type { CreditSettings, RoundingMode } from '../types';
 import { Notice, Problem, type NoticeState } from './shared';
@@ -20,17 +20,16 @@ import { Notice, Problem, type NoticeState } from './shared';
 /** What the form shows for the saved values: an empty field is "not decided". */
 const formFrom = (settings: CreditSettings): FinancialForm => ({
   creditValueUsd: settings.financial.creditValueUsd ?? '',
-  markupPercentage: settings.financial.markupPercentage ?? '',
   roundingMode: settings.financial.roundingMode ?? '',
   decimalPlaces: settings.financial.decimalPlaces === null ? '' : String(settings.financial.decimalPlaces),
 });
 
-const same = (a: FinancialForm, b: FinancialForm) => canonical(a.creditValueUsd || null) === canonical(b.creditValueUsd || null) && canonical(a.markupPercentage || null) === canonical(b.markupPercentage || null) && a.roundingMode === b.roundingMode && a.decimalPlaces === b.decimalPlaces;
+const same = (a: FinancialForm, b: FinancialForm) => canonical(a.creditValueUsd || null) === canonical(b.creditValueUsd || null) && a.roundingMode === b.roundingMode && a.decimalPlaces === b.decimalPlaces;
 
 const SAVED = (value: string | null, suffix = '') => (value === null ? <Badge variant="outline">Not set</Badge> : <span className="font-mono text-xs">{value}{suffix}</span>);
 
 /**
- * The financial settings of the verified-USD billing rules: the USD value of one credit, the markup, the rounding mode and the
+ * The financial settings of the verified-USD billing rules: the USD value of one credit, the rounding mode and the
  * precision. Each shows its saved value next to the box, and the grey text inside an empty box is an example, never a value. Nothing is
  * saved until the administrator has seen what changes, and a save made on top of someone else's newer one is refused.
  */
@@ -38,6 +37,8 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
   const query = useCreditSettings();
   const save = useSaveFinancial();
   const preview = usePreview();
+  const planQuery = usePlanBudgets();
+  const [planId, setPlanId] = useState('');
   const [values, setValues] = useState<FinancialForm | null>(null);
   const [problems, setProblems] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<FinancialForm | null>(null);
@@ -76,7 +77,6 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
   const changes = confirm
     ? ([
         ['Credit value (USD per credit)', saved.creditValueUsd, confirm.creditValueUsd],
-        ['Markup (%)', saved.markupPercentage, confirm.markupPercentage],
         ['Rounding mode', saved.roundingMode && ROUNDING_LABEL[saved.roundingMode], confirm.roundingMode && ROUNDING_LABEL[confirm.roundingMode]],
         ['Decimal places', saved.decimalPlaces, confirm.decimalPlaces],
       ] as Array<[string, string | undefined, string | undefined]>).filter(([, from, to]) => canonical(from || null) !== canonical(to || null))
@@ -86,10 +86,11 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
   const calculate = () => {
     if (!/^\d{1,12}(\.\d{1,14})?$/.test(cost.trim())) return setCostProblem('Enter a USD amount such as 0.008 (digits and one point)');
     setCostProblem(undefined);
-    preview.mutate(cost.trim());
+    if (!planId) return setCostProblem('Choose the plan whose markup to use');
+    preview.mutate({ verifiedCostUsd: cost.trim(), planId });
   };
 
-  const field = (key: 'creditValueUsd' | 'markupPercentage' | 'decimalPlaces', label: string, example: string, savedValue: string | null, hint: string, suffix = '') => (
+  const field = (key: 'creditValueUsd' | 'decimalPlaces', label: string, example: string, savedValue: string | null, hint: string, suffix = '') => (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
         <Label htmlFor={`fin-${key}`}>{label}</Label>
@@ -108,10 +109,10 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
         <CardHeader>
           <CardTitle>Financial settings</CardTitle>
           <CardDescription>
-            How verified actual AI cost in USD becomes credits: marked cost = cost × (1 + markup ÷ 100), credits = marked cost ÷ credit value. The costs of all the requests of one customer turn are added first, and the result is rounded once, when the credits are taken. No value is assumed: empty means not decided.
+            How verified actual AI cost in USD becomes credits: marked cost = cost × (1 + plan markup ÷ 100), credits = marked cost ÷ credit value. The markup belongs to each plan (Plans & budgets tab), not here. The costs of all the requests of one customer turn are added first, and the result is rounded once, when the credits are taken. No value is assumed: empty means not decided.
           </CardDescription>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={settings.financial.complete ? 'success' : 'warning'}>{settings.financial.complete ? 'All four set' : `Not set: ${settings.financial.missing.length} of 4`}</Badge>
+            <Badge variant={settings.financial.complete ? 'success' : 'warning'}>{settings.financial.complete ? 'All three set' : `Not set: ${settings.financial.missing.length} of 3`}</Badge>
             <span className="text-xs text-muted-foreground">Settings version {settings.version} · last saved {formatWhen(settings.version === 0 ? null : settings.updatedAt)}</span>
           </div>
         </CardHeader>
@@ -136,7 +137,6 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               {field('creditValueUsd', 'Credit value (USD per credit)', '0.0001', settings.financial.creditValueUsd, 'What one credit is worth, in US dollars. Greater than zero, up to 12 decimal places.')}
-              {field('markupPercentage', 'Markup (percent)', '200', settings.financial.markupPercentage, '0 means no markup; empty means not decided. At most 10000.', '%')}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <Label htmlFor="fin-roundingMode">Rounding mode</Label>
@@ -161,14 +161,14 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
               {field('decimalPlaces', 'Decimal places of the debit', '2', settings.financial.decimalPlaces === null ? null : String(settings.financial.decimalPlaces), `A whole number from ${settings.bounds.decimalPlaces.min} to ${settings.bounds.decimalPlaces.max}.`)}
             </div>
 
-            {(values.creditValueUsd === '' || values.markupPercentage === '' || values.roundingMode === '' || values.decimalPlaces === '') && (
-              <p className="text-xs text-muted-foreground">Until all four are set, no credit can be calculated from AI cost.</p>
+            {(values.creditValueUsd === '' || values.roundingMode === '' || values.decimalPlaces === '') && (
+              <p className="text-xs text-muted-foreground">Until all three are set, no credit can be calculated from AI cost.</p>
             )}
 
             {settings.legacyConversion.consistency.status === 'different' && (
               <div role="status" className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-                <span>{settings.legacyConversion.consistency.detail} The older conversion is {formatCredits(settings.legacyConversion.creditsPerCostUnit)} credits per {settings.legacyConversion.costCurrency} with {formatCredits(settings.legacyConversion.markupPercent)}% markup (see the Credit policy tab of the AI gateway page).</span>
+                <span>{settings.legacyConversion.consistency.detail} The older conversion is {formatCredits(settings.legacyConversion.creditsPerCostUnit)} credits per {settings.legacyConversion.costCurrency} (see the Credit policy tab of the AI gateway page).</span>
               </div>
             )}
 
@@ -202,11 +202,27 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
               <Label htmlFor="preview-cost">Verified cost (USD)</Label>
               <Input id="preview-cost" value={cost} placeholder="e.g. 0.008" autoComplete="off" inputMode="decimal" onChange={(event) => setCost(event.target.value)} className="w-48" />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="preview-plan">Plan (its markup is used)</Label>
+              <Select value={planId} onValueChange={setPlanId}>
+                <SelectTrigger id="preview-plan" aria-label="Plan" className="w-48">
+                  <SelectValue placeholder="Choose a plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(planQuery.data?.items ?? []).map((plan) => (
+                    <SelectItem key={plan.planId} value={plan.planId} disabled={plan.markupPercent === null}>
+                      {plan.name}
+                      {plan.markupPercent === null ? ' (no markup set)' : ` (${plan.markupPercent}%)`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button type="button" variant="outline" disabled={preview.isPending || !settings.financial.complete} onClick={calculate}>
               Calculate
             </Button>
           </div>
-          {!settings.financial.complete && <p className="text-xs text-muted-foreground">Set all four values and save them first.</p>}
+          {!settings.financial.complete && <p className="text-xs text-muted-foreground">Set all three values and save them first.</p>}
           <Problem>{costProblem}</Problem>
           {preview.error ? <Problem>{apiErrorMessage(preview.error, 'The calculation could not be made.')}</Problem> : null}
           {preview.data && !preview.isPending && (
@@ -217,6 +233,8 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
               <dd className="font-mono text-xs">{canonical(preview.data.creditsUnrounded)}</dd>
               <dt className="font-medium">Credits after rounding</dt>
               <dd className="font-mono text-xs font-medium">{preview.data.credits}</dd>
+              <dt className="text-muted-foreground">Plan markup used</dt>
+              <dd className="font-mono text-xs">{preview.data.settings.markupPercent}%</dd>
               <dt className="text-muted-foreground">Settings version used</dt>
               <dd className="font-mono text-xs">{preview.data.settings.version}</dd>
             </dl>
@@ -238,7 +256,6 @@ export function FinancialCard({ canWrite, onDirtyChange }: { canWrite: boolean; 
               {
                 expectedVersion: settings.version,
                 creditValueUsd: confirm.creditValueUsd === '' ? null : confirm.creditValueUsd,
-                markupPercentage: confirm.markupPercentage === '' ? null : confirm.markupPercentage,
                 roundingMode: confirm.roundingMode === '' ? null : confirm.roundingMode,
                 decimalPlaces: confirm.decimalPlaces === '' ? null : Number(confirm.decimalPlaces),
               },

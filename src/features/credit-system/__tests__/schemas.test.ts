@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { canonical, isDecimal, places, sameDecimal, toUnits } from '../decimal';
-import { costUnitSchema, financialSchema, limitsSchema, workspaceIdSchema } from '../schemas';
+import { costUnitSchema, financialSchema, grantSchema, limitsSchema, planBudgetSchema, workspaceIdSchema } from '../schemas';
 
-const FINANCIAL = { creditValueUsd: '0.0001', markupPercentage: '200', roundingMode: 'ceil' as const, decimalPlaces: '2' };
+const FINANCIAL = { creditValueUsd: '0.0001', roundingMode: 'ceil' as const, decimalPlaces: '2' };
 const problem = (result: { success: boolean; error?: { issues: Array<{ path: PropertyKey[]; message: string }> } }, field: string) => result.error?.issues.some((issue) => issue.path[0] === field) ?? false;
 
 describe('money as text', () => {
@@ -22,23 +22,13 @@ describe('money as text', () => {
 });
 
 describe('the financial form', () => {
-  it('accepts the four values, a zero markup and the empty (not decided) form', () => {
+  it('accepts the three values and the empty (not decided) form', () => {
     expect(financialSchema.safeParse(FINANCIAL).success).toBe(true);
-    expect(financialSchema.safeParse({ ...FINANCIAL, markupPercentage: '0' }).success).toBe(true);
-    expect(financialSchema.safeParse({ creditValueUsd: '', markupPercentage: '', roundingMode: '', decimalPlaces: '' }).success).toBe(true);
+    expect(financialSchema.safeParse({ creditValueUsd: '', roundingMode: '', decimalPlaces: '' }).success).toBe(true);
   });
 
   it.each(['0', '0.0', '-0.0001', '1e-4', '0,0001', ' 1 000', 'abc', '0.0000000000001', '123456789'])('refuses the credit value %j', (creditValueUsd) => {
     expect(problem(financialSchema.safeParse({ ...FINANCIAL, creditValueUsd }), 'creditValueUsd')).toBe(true);
-  });
-
-  it.each(['-1', '10000.0001', '10001', 'abc', '1e2', '5.00001'])('refuses the markup %j', (markupPercentage) => {
-    expect(problem(financialSchema.safeParse({ ...FINANCIAL, markupPercentage }), 'markupPercentage')).toBe(true);
-  });
-
-  it('accepts a markup of exactly 10000, with the exact comparison', () => {
-    expect(financialSchema.safeParse({ ...FINANCIAL, markupPercentage: '10000' }).success).toBe(true);
-    expect(financialSchema.safeParse({ ...FINANCIAL, markupPercentage: '10000.0000' }).success).toBe(true);
   });
 
   it.each(['round', 'up', 'CEIL'])('refuses the rounding mode %j', (roundingMode) => {
@@ -98,5 +88,35 @@ describe('the workspace ID', () => {
     expect(workspaceIdSchema.safeParse({ organizationId: 'not-an-id', note: '' }).success).toBe(false);
     expect(workspaceIdSchema.safeParse({ organizationId: '', note: '' }).success).toBe(false);
     expect(workspaceIdSchema.safeParse({ organizationId: '018f0000-0000-7000-8000-000000000001', note: 'x'.repeat(201) }).success).toBe(false);
+  });
+});
+
+describe('the plan form', () => {
+  it('accepts a budget and a markup, a markup of zero, and either one alone', () => {
+    expect(planBudgetSchema.safeParse({ usdBudget: '10', markupPercent: '20' }).success).toBe(true);
+    expect(planBudgetSchema.safeParse({ usdBudget: '10', markupPercent: '0' }).success).toBe(true);
+    expect(planBudgetSchema.safeParse({ usdBudget: '10', markupPercent: '' }).success).toBe(true);
+    expect(planBudgetSchema.safeParse({ usdBudget: '', markupPercent: '10000' }).success).toBe(true);
+    expect(planBudgetSchema.safeParse({ usdBudget: '12.345678', markupPercent: '7.5' }).success).toBe(true);
+  });
+
+  it.each([
+    ['a zero budget', { usdBudget: '0', markupPercent: '20' }, 'usdBudget'],
+    ['a negative budget', { usdBudget: '-1', markupPercent: '20' }, 'usdBudget'],
+    ['an exponent', { usdBudget: '1e1', markupPercent: '20' }, 'usdBudget'],
+    ['seven places', { usdBudget: '1.0000001', markupPercent: '20' }, 'usdBudget'],
+    ['a negative markup', { usdBudget: '10', markupPercent: '-1' }, 'markupPercent'],
+    ['a markup over 10000', { usdBudget: '10', markupPercent: '10000.0001' }, 'markupPercent'],
+    ['text as a markup', { usdBudget: '10', markupPercent: 'abc' }, 'markupPercent'],
+    ['five decimal places of markup', { usdBudget: '10', markupPercent: '5.00001' }, 'markupPercent'],
+    ['nothing at all', { usdBudget: '', markupPercent: '' }, 'usdBudget'],
+  ])('refuses %s', (_name, input, field) => {
+    expect(problem(planBudgetSchema.safeParse(input), field)).toBe(true);
+  });
+
+  it('asks for a reason before a grant', () => {
+    expect(grantSchema.safeParse({ reason: 'first month' }).success).toBe(true);
+    expect(grantSchema.safeParse({ reason: 'a' }).success).toBe(false);
+    expect(grantSchema.safeParse({ reason: '   ' }).success).toBe(false);
   });
 });

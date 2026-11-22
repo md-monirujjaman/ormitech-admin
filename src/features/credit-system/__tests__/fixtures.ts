@@ -3,8 +3,9 @@ import type { CreditSettings, Dashboard, LimitsList, Operation, PilotWorkspace }
 /** The shipped state: nothing decided. Every figure in the tests is a fixture; none is a business value. */
 export const settings = (overrides: Partial<CreditSettings> = {}): CreditSettings => ({
   version: 0,
-  financial: { creditValueUsd: null, markupPercentage: null, roundingMode: null, decimalPlaces: null, complete: false, missing: ['creditValueUsd', 'markupPercentage', 'roundingMode', 'decimalPlaces'] },
+  financial: { creditValueUsd: null, roundingMode: null, decimalPlaces: null, complete: false, missing: ['creditValueUsd', 'roundingMode', 'decimalPlaces'] },
   costUnit: { unit: null, usdFactor: null, verifiedAt: null, verifiedBy: null, evidence: null, verified: false },
+  hold: { turnHoldCredits: null },
   mode: {
     platform: 'off',
     recoveryConfirmed: false,
@@ -19,7 +20,8 @@ export const settings = (overrides: Partial<CreditSettings> = {}): CreditSetting
     ready: false,
     checks: [
       { key: 'financial_settings', required: true, ok: false, detail: 'Not set: creditValueUsd, markupPercentage, roundingMode, decimalPlaces.' },
-      { key: 'cost_unit_verified', required: true, ok: false, detail: 'The provider cost unit has not been verified as USD, so no cost can be billed.' },
+      { key: 'hold_decided', required: true, ok: false, detail: 'The fixed hold per turn is not decided.' },
+      { key: 'model_verified', required: true, ok: false, detail: 'No model has its provider cost verified as USD, so no cost can be billed.' },
       { key: 'recovery_confirmed', required: true, ok: false, detail: 'Credit recovery has not been confirmed.' },
       { key: 'pilot_restricted', required: false, ok: false, detail: 'Not restricted to a pilot.' },
     ],
@@ -35,7 +37,7 @@ export const settings = (overrides: Partial<CreditSettings> = {}): CreditSetting
 export const decided = (overrides: Partial<CreditSettings> = {}): CreditSettings =>
   settings({
     version: 3,
-    financial: { creditValueUsd: '0.0001', markupPercentage: '200', roundingMode: 'ceil', decimalPlaces: 2, complete: true, missing: [] },
+    financial: { creditValueUsd: '0.0001', roundingMode: 'ceil', decimalPlaces: 2, complete: true, missing: [] },
     updatedBy: '018f0000-0000-7000-8000-0000000000aa',
     ...overrides,
   });

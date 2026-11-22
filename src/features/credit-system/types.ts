@@ -10,13 +10,12 @@ export type RoundingMode = 'ceil' | 'floor' | 'half_up' | 'half_even';
 
 export interface FinancialValues {
   creditValueUsd: string | null;
-  markupPercentage: string | null;
   roundingMode: RoundingMode | null;
   decimalPlaces: number | null;
 }
 
 export interface ReadinessCheck {
-  key: 'financial_settings' | 'cost_unit_verified' | 'recovery_confirmed' | 'pilot_restricted';
+  key: 'financial_settings' | 'hold_decided' | 'model_verified' | 'recovery_confirmed' | 'pilot_restricted';
   required: boolean;
   ok: boolean;
   detail: string;
@@ -27,6 +26,8 @@ export interface CreditSettings {
   version: number;
   financial: FinancialValues & { complete: boolean; missing: string[] };
   costUnit: { unit: string | null; usdFactor: string | null; verifiedAt: string | null; verifiedBy: string | null; evidence: string | null; verified: boolean };
+  /** The fixed credit hold made before every AI call. Null = not decided. */
+  hold: { turnHoldCredits: string | null };
   mode: { platform: CreditMode; explanation: Record<CreditMode, string>; recoveryConfirmed: boolean };
   pilot: { restricted: boolean; workspaces: number; max: number };
   enforceReadiness: { ready: boolean; checks: ReadinessCheck[] };
@@ -47,9 +48,13 @@ export interface CreditSettings {
 export interface FinancialInput {
   expectedVersion: number;
   creditValueUsd: string | null;
-  markupPercentage: string | null;
   roundingMode: RoundingMode | null;
   decimalPlaces: number | null;
+}
+
+export interface HoldInput {
+  expectedVersion: number;
+  turnHoldCredits: string | null;
 }
 
 export interface CostUnitInput {
@@ -64,7 +69,7 @@ export interface Preview {
   markedCostUsd: string;
   creditsUnrounded: string;
   credits: string;
-  settings: FinancialValues & { version: number };
+  settings: FinancialValues & { markupPercent: string; version: number };
   note: string;
 }
 
@@ -214,4 +219,81 @@ export interface TurnDetail {
   unresolvedAttempts: number;
   verifiedUsd: string | null;
   items: Operation[];
+}
+
+/** A plan's API budget in USD and its markup (Plan Configuration is the one source of the markup). Credits are derived by the API, never typed. */
+export interface PlanBudget {
+  planId: string;
+  slug: string;
+  name: string;
+  status: string;
+  planVersion: number;
+  usdBudget: string | null;
+  markupPercent: string | null;
+  credits: string | null;
+  missing: string[];
+  version: number | null;
+  updatedAt: string | null;
+}
+
+export interface PlanBudgetList {
+  conversion: { ready: boolean; missing: string[]; creditValueUsd?: string; roundingMode?: RoundingMode; decimalPlaces?: number; settingsVersion?: number };
+  items: PlanBudget[];
+}
+
+export interface PlanBudgetInput {
+  expectedVersion: number | null;
+  usdBudget: string | null;
+  markupPercent: string | null;
+}
+
+export interface WorkspaceHit {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+}
+
+export interface WorkspaceBudget {
+  organizationId: string;
+  name: string;
+  plan: { slug: string; name: string | null; usdBudget: string | null; markupPercent: string | null };
+  workspaceBudgetUsd: string | null;
+  effective: { budgetUsd: string | null; source: 'plan' | 'workspace' | null; markupPercent: string | null; credits: string | null; missing: string[] };
+  wallet: { available: string; reserved: string };
+  grants: Array<{ id: string; source: 'plan' | 'workspace'; usdBudget: string; markupPercent: string; creditValueUsd: string; settingsVersion: number; credits: string; grantedBy: string; reason: string; createdAt: string }>;
+}
+
+export interface GrantBudgetInput {
+  expectedCredits: string;
+  reason: string;
+  idempotencyKey: string;
+}
+
+export interface ModelVerification {
+  id: string;
+  modelId: string;
+  costUnit: string;
+  usdFactor: string | null;
+  evidence: string;
+  generationIds: string[];
+  verifiedBy: string;
+  verifiedAt: string;
+  status: 'verified' | 'revoked';
+  revokedAt: string | null;
+  revokedBy: string | null;
+  revokeReason: string | null;
+}
+
+export interface ModelVerificationList {
+  models: Array<{ modelId: string; displayName: string; verification: ModelVerification | null }>;
+  history: ModelVerification[];
+}
+
+export interface VerifyModelInput {
+  modelId: string;
+  costUnit: string;
+  usdFactor: string;
+  evidence: string;
+  generationIds: string[];
 }
