@@ -53,7 +53,7 @@ export const useAddPilotWorkspace = () => useSettingsMutation((input: { organiza
 export const useRemovePilotWorkspace = () => useSettingsMutation((organizationId: string) => creditSystemApi.removePilotWorkspace(organizationId));
 export const useSaveLimits = () => useSettingsMutation((input: { organizationId: string; limits: LimitsInput }) => creditSystemApi.saveLimits(input.organizationId, input.limits));
 export const useRemoveLimits = () => useSettingsMutation((organizationId: string) => creditSystemApi.removeLimits(organizationId));
-export const usePreview = () => useMutation({ mutationFn: (input: { verifiedCostUsd: string; planId: string }) => creditSystemApi.preview(input.verifiedCostUsd, input.planId) });
-export const useSavePlanBudget = () => useSettingsMutation((input: { planId: string; plan: PlanBudgetInput }) => creditSystemApi.savePlan(input.planId, input.plan));
-export const useRemovePlanBudget = () => useSettingsMutation((planId: string) => creditSystemApi.removePlan(planId));
+export const usePreview = () => useMutation({ mutationFn: (input: { verifiedCostUsd: string; planSlug: string }) => creditSystemApi.preview(input.verifiedCostUsd, input.planSlug) });
+export const useSavePlanBudget = () => useSettingsMutation((input: { slug: string; plan: PlanBudgetInput }) => creditSystemApi.savePlan(input.slug, input.plan));
+export const useRemovePlanBudget = () => useSettingsMutation((slug: string) => creditSystemApi.removePlan(slug));
 export const useGrantBudget = () => useSettingsMutation((input: { organizationId: string; grant: GrantBudgetInput }) => creditSystemApi.grantBudget(input.organizationId, input.grant));

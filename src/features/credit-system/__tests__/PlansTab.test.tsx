@@ -11,7 +11,7 @@ vi.mock('@/api/axiosClient', () => ({ axiosClient: { get: vi.fn(), post: vi.fn()
 const http = axiosClient as unknown as Record<'get' | 'post' | 'put' | 'patch' | 'delete', Mock>;
 const ORG = '018f0000-0000-7000-8000-000000000001';
 
-const plan = (over: Partial<PlanBudget> = {}): PlanBudget => ({ planId: 'plan-growth', slug: 'growth', name: 'Growth', status: 'active', planVersion: 1, usdBudget: null, markupPercent: null, credits: null, missing: ['budget', 'markup', 'creditValueUsd'], version: null, updatedAt: null, ...over });
+const plan = (over: Partial<PlanBudget> = {}): PlanBudget => ({ slug: 'growth', name: 'Growth', status: 'active', planVersion: 1, usdBudget: null, markupPercent: null, credits: null, missing: ['budget', 'markup', 'creditValueUsd'], version: null, updatedAt: null, ...over });
 const plansOf = (items: PlanBudget[], ready = false) => ok({ conversion: { ready, missing: ready ? [] : ['creditValueUsd', 'roundingMode', 'decimalPlaces'] }, items });
 const budget = (over: Partial<WorkspaceBudget> = {}): WorkspaceBudget => ({
   organizationId: ORG,
@@ -84,7 +84,7 @@ describe('plan configuration', () => {
     await userEvent.type(input('API budget (USD)'), '10');
     await userEvent.type(input('Markup (percent)'), '20');
     await userEvent.click(screen.getByRole('button', { name: 'Save plan' }));
-    await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/credit-plans/plan-growth', { expectedVersion: null, usdBudget: '10', markupPercent: '20' }));
+    await waitFor(() => expect(http.put).toHaveBeenCalledWith('/admin/ai/credit-plans/growth', { expectedVersion: null, usdBudget: '10', markupPercent: '20' }));
     expect(await screen.findByText('Growth: the budget and markup were saved.')).toBeTruthy();
   });
 
@@ -116,7 +116,7 @@ describe('plan configuration', () => {
     const dialog = await screen.findByRole('alertdialog');
     expect(http.delete).not.toHaveBeenCalled();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
-    await waitFor(() => expect(http.delete).toHaveBeenCalledWith('/admin/ai/credit-plans/plan-growth'));
+    await waitFor(() => expect(http.delete).toHaveBeenCalledWith('/admin/ai/credit-plans/growth'));
   });
 
   it('offers no way to change anything without the permission to', async () => {

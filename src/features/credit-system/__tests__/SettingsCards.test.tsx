@@ -17,7 +17,7 @@ function serve(current: CreditSettings = settings(), pilot = [pilotRow()]) {
   http.get.mockImplementation(async (path: string) => {
     if (path === '/admin/ai/credit-settings') return ok(current);
     if (path === '/admin/ai/credit-settings/pilot-workspaces') return ok(pilot);
-    if (path === '/admin/ai/credit-plans') return ok({ conversion: { ready: true, missing: [] }, items: [{ planId: 'plan-growth', slug: 'growth', name: 'Growth', status: 'active', planVersion: 1, usdBudget: '10', markupPercent: '200', credits: '30000', missing: [], version: 1, updatedAt: '2026-11-20T09:00:00.000Z' }] });
+    if (path === '/admin/ai/credit-plans') return ok({ conversion: { ready: true, missing: [] }, items: [{ slug: 'growth', name: 'Growth', status: 'active', planVersion: 1, usdBudget: '10', markupPercent: '200', credits: '30000', missing: [], version: 1, updatedAt: '2026-11-20T09:00:00.000Z' }] });
     throw new Error(`unexpected GET ${path}`);
   });
 }
@@ -133,7 +133,7 @@ describe('FinancialCard', () => {
     await userEvent.click(await screen.findByRole('option', { name: /Growth/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
     const result = await screen.findByLabelText('Calculation result');
-    expect(http.post).toHaveBeenCalledWith('/admin/ai/credit-settings/preview', { verifiedCostUsd: '0.008', planId: 'plan-growth' });
+    expect(http.post).toHaveBeenCalledWith('/admin/ai/credit-settings/preview', { verifiedCostUsd: '0.008', planSlug: 'growth' });
     expect(within(result).getByText('0.024')).toBeTruthy();
     expect(within(result).getByText('240.00')).toBeTruthy();
   });

@@ -16,7 +16,7 @@ export const creditSystemApi = {
   saveFinancial: (input: FinancialInput) => unwrap<CreditSettings>(axiosClient.put(`${BASE}/financial`, input)),
   saveHold: (input: HoldInput) => unwrap<CreditSettings>(axiosClient.put(`${BASE}/hold`, input)),
   saveCostUnit: (input: CostUnitInput) => unwrap<CreditSettings>(axiosClient.put(`${BASE}/cost-unit`, input)),
-  preview: (verifiedCostUsd: string, planId: string) => unwrap<Preview>(axiosClient.post(`${BASE}/preview`, { verifiedCostUsd, planId })),
+  preview: (verifiedCostUsd: string, planSlug: string) => unwrap<Preview>(axiosClient.post(`${BASE}/preview`, { verifiedCostUsd, planSlug })),
   setPilotRestriction: (expectedVersion: number, enabled: boolean) => unwrap<CreditSettings>(axiosClient.put(`${BASE}/pilot-restriction`, { expectedVersion, enabled })),
 
   pilotWorkspaces: () => unwrap<PilotWorkspace[]>(axiosClient.get(`${BASE}/pilot-workspaces`)),
@@ -32,8 +32,8 @@ export const creditSystemApi = {
   turn: (turnId: string) => unwrap<TurnDetail>(axiosClient.get(`/admin/ai/credit-operations/turns/${turnId}`)),
 
   plans: () => unwrap<PlanBudgetList>(axiosClient.get('/admin/ai/credit-plans')),
-  savePlan: (planId: string, input: PlanBudgetInput) => unwrap<PlanBudgetList>(axiosClient.put(`/admin/ai/credit-plans/${planId}`, input)),
-  removePlan: (planId: string) => unwrap<PlanBudgetList>(axiosClient.delete(`/admin/ai/credit-plans/${planId}`)),
+  savePlan: (slug: string, input: PlanBudgetInput) => unwrap<PlanBudgetList>(axiosClient.put(`/admin/ai/credit-plans/${slug}`, input)),
+  removePlan: (slug: string) => unwrap<PlanBudgetList>(axiosClient.delete(`/admin/ai/credit-plans/${slug}`)),
   searchWorkspaces: (q: string) => unwrap<WorkspaceHit[]>(axiosClient.get('/admin/ai/credit-budget/search', { params: { q } })),
   workspaceBudget: (organizationId: string) => unwrap<WorkspaceBudget>(axiosClient.get(`/admin/organizations/${organizationId}/ai-credit-budget`)),
   grantBudget: (organizationId: string, input: GrantBudgetInput) => unwrap<{ replay: boolean; credits: string }>(axiosClient.post(`/admin/organizations/${organizationId}/ai-credits/budget-grants`, input)),
