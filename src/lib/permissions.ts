@@ -56,8 +56,8 @@ export const ROLE_DEFINITIONS: Role[] = [
   {
     name: 'ADMIN',
     label: 'Admin',
-    description: 'Full operational access; cannot manage other admin accounts, roles, AI providers or AI credits.',
-    permissions: ALL_PERMISSIONS.filter((p) => p !== 'admin_users.write' && p !== 'roles.write' && p !== 'fastsupport.use' && p !== 'fastsupport.moderators' && p !== 'storage.read' && p !== 'ai_providers.read' && p !== 'ai_providers.write' && p !== 'ai_credits.read' && p !== 'ai_credits.write'),
+    description: 'Full operational access; cannot manage other admin accounts, roles, AI providers, AI credits or email templates.',
+    permissions: ALL_PERMISSIONS.filter((p) => p !== 'admin_users.write' && p !== 'roles.write' && p !== 'fastsupport.use' && p !== 'fastsupport.moderators' && p !== 'storage.read' && p !== 'ai_providers.read' && p !== 'ai_providers.write' && p !== 'ai_credits.read' && p !== 'ai_credits.write' && p !== 'email.read' && p !== 'email.write'),
   },
   {
     name: 'MODERATOR',

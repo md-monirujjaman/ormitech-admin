@@ -4,6 +4,15 @@ import type { OrganizationListParams } from '@/types/organization';
 
 /** Every TanStack Query key in one place, so invalidation after a mutation can't miss a screen. */
 export const queryKeys = {
+  email: {
+    all: ['email'] as const,
+    templates: ['email', 'templates'] as const,
+    template: (key: string) => ['email', 'templates', key] as const,
+    versions: (key: string) => ['email', 'templates', key, 'versions'] as const,
+    version: (key: string, version: number) => ['email', 'templates', key, 'versions', version] as const,
+    branding: ['email', 'branding'] as const,
+    logs: (query: unknown) => ['email', 'logs', query] as const,
+  },
   monitoring: {
     snapshot: ['monitoring', 'snapshot'] as const,
   },
