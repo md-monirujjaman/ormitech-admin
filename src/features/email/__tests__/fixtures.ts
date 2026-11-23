@@ -1,4 +1,4 @@
-import type { Branding, DeliveryLog, TemplateDetail, TemplateSummary, VersionInfo } from '../types';
+import type { DeliveryLog, TemplateDetail, TemplateSummary, VersionInfo } from '../types';
 
 export const summary = (over: Partial<TemplateSummary> = {}): TemplateSummary => ({
   key: 'team.invitation',
@@ -36,19 +36,6 @@ export const versions: VersionInfo[] = [
   { version: 2, createdAt: '2026-11-20T10:00:00Z', createdBy: null, restoredFromVersion: null, note: 'Shorter subject', published: true },
   { version: 1, createdAt: '2026-11-10T10:00:00Z', createdBy: null, restoredFromVersion: null, note: null, published: false },
 ];
-
-export const branding = (over: Partial<Branding> = {}): Branding => ({
-  productName: 'OrmiTech',
-  logoUrl: null,
-  accentColor: '#4f46e5',
-  textColor: '#1f2937',
-  backgroundColor: '#f3f4f6',
-  fontFamily: "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-  headerTagline: '',
-  footerLines: ['You are receiving this email because of activity on your OrmiTech account.'],
-  custom: false,
-  ...over,
-});
 
 export const log = (over: Partial<DeliveryLog> = {}): DeliveryLog => ({
   id: '018f0000-0000-7000-8000-000000000001',

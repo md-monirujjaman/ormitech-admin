@@ -108,7 +108,7 @@ describe('the template editor', () => {
   it('puts a variable where the cursor is', async () => {
     const user = userEvent.setup();
     open();
-    const html = (await field('HTML body')) as HTMLTextAreaElement;
+    const html = (await field('Full email HTML (header, body, footer and CSS)')) as HTMLTextAreaElement;
     html.focus();
     html.setSelectionRange(3, 3);
     await user.click(screen.getByRole('button', { name: 'Insert {{accept_url}}' }));
@@ -129,7 +129,7 @@ describe('the template editor', () => {
     http.put.mockImplementation(async () => ok({ warnings: ['tag:script'] }));
     const user = userEvent.setup();
     open();
-    fireEvent.change(await field('HTML body'), { target: { value: '<p>x</p><script>1</script>' } });
+    fireEvent.change(await field('Full email HTML (header, body, footer and CSS)'), { target: { value: '<p>x</p><script>1</script>' } });
     await user.click(screen.getByRole('button', { name: /Save draft/ }));
     expect(await screen.findByText(/will remove: tag:script/)).toBeTruthy();
   });

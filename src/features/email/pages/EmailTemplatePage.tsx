@@ -195,11 +195,11 @@ export default function EmailTemplatePage() {
           <Card className="space-y-4 p-4">
             {field('subject', 'Subject', false)}
             {field('preheader', 'Preheader (the grey preview text in an inbox)', false)}
-            {field('html', 'HTML body', true, 14)}
+            {field('html', 'Full email HTML (header, body, footer and CSS)', true, 24)}
             {field('text', 'Plain-text body', true, 8)}
             <VariablePicker variables={detail.variables} onInsert={insert} disabled={!canWrite} />
             <p className="text-xs text-muted-foreground">
-              HTML is cleaned by the server before it is sent: scripts, forms, images and unsafe links are removed. The preview shows the cleaned result.
+              This is the whole email. Paste a complete HTML document with your own header, footer, tables, inline styles and a &lt;style&gt; block. Nothing is added around it. The server removes only what can run code or reach out of the message: scripts, frames, forms, event handlers, &lt;link&gt;, CSS @import and non-https images. The preview shows what is sent.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="ghost" disabled={!canWrite} onClick={() => setForm(normalize(detail.builtIn))}>
