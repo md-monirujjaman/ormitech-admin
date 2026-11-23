@@ -86,8 +86,8 @@ export function TemplatesTab({ canWrite }: { canWrite: boolean }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Template</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="hidden sm:table-cell">Category</TableHead>
+                <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead className="hidden md:table-cell">Last change</TableHead>
                 <TableHead className="w-24" />
               </TableRow>
@@ -103,9 +103,19 @@ export function TemplatesTab({ canWrite }: { canWrite: boolean }) {
                       {template.key}
                       {template.critical ? ' · sign-in email' : ''}
                     </p>
+                    {/* On a phone the Category and Status columns are hidden, so they sit under the name. */}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1 sm:hidden">
+                      <span className="text-xs text-muted-foreground">{CATEGORY_LABEL[template.category]}</span>
+                      {templateStatuses(template).map((state) => (
+                        <Badge key={state} variant={STATUS_VARIANT[state]}>
+                          {STATUS_LABEL[state]}
+                          {state === 'published' && template.publishedVersion ? ` v${template.publishedVersion}` : ''}
+                        </Badge>
+                      ))}
+                    </div>
                   </TableCell>
-                  <TableCell>{CATEGORY_LABEL[template.category]}</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">{CATEGORY_LABEL[template.category]}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <div className="flex flex-wrap gap-1">
                       {templateStatuses(template).map((state) => (
                         <Badge key={state} variant={STATUS_VARIANT[state]}>
