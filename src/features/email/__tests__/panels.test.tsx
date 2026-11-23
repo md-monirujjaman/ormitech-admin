@@ -33,13 +33,14 @@ describe('the template list', () => {
   it('lists every template with its status: published version, draft, disabled, built-in', async () => {
     renderEmail(<TemplatesTab canWrite />);
     const reset = (await screen.findByText('Password reset link')).closest('tr')!;
-    expect(within(reset).getByText('Published v2')).toBeTruthy();
-    expect(within(reset).getByText('Authentication')).toBeTruthy();
+    // Category and status are in two cells, one for phones and one for wider screens; CSS shows one of them.
+    expect(within(reset).getAllByText('Published v2').length).toBeGreaterThan(0);
+    expect(within(reset).getAllByText('Authentication').length).toBeGreaterThan(0);
     expect(within(reset).getByText(/sign-in email/)).toBeTruthy();
-    expect(within(screen.getByText('Password was changed').closest('tr')!).getByText('Draft')).toBeTruthy();
+    expect(within(screen.getByText('Password was changed').closest('tr')!).getAllByText('Draft').length).toBeGreaterThan(0);
     const disabled = screen.getByText('New support request').closest('tr')!;
-    expect(within(disabled).getByText('Disabled')).toBeTruthy();
-    expect(within(screen.getByText('Team invitation').closest('tr')!).getByText('Built-in')).toBeTruthy();
+    expect(within(disabled).getAllByText('Disabled').length).toBeGreaterThan(0);
+    expect(within(screen.getByText('Team invitation').closest('tr')!).getAllByText('Built-in').length).toBeGreaterThan(0);
   });
 
   it('links each row to its editor', async () => {
@@ -322,8 +323,9 @@ describe('delivery monitoring', () => {
   it('offers Retry only for a failed email the queue still holds, and asks first', async () => {
     const user = userEvent.setup();
     renderEmail(<DeliveryTab canWrite />);
-    expect(await screen.findAllByRole('button', { name: /^Retry/ })).toHaveLength(1);
-    await user.click(screen.getByRole('button', { name: 'Retry the email to ba***@example.com' }));
+    // One failed email the queue still holds: its Retry is in the status cell on phones and in its own cell on wider screens.
+    expect(await screen.findAllByRole('button', { name: /^Retry/ })).toHaveLength(2);
+    await user.click(screen.getAllByRole('button', { name: 'Retry the email to ba***@example.com' })[0]!);
     const dialog = await screen.findByRole('alertdialog');
     expect(http.post).not.toHaveBeenCalled();
     await user.click(within(dialog).getByRole('button', { name: 'Retry' }));
@@ -337,7 +339,7 @@ describe('delivery monitoring', () => {
     });
     const user = userEvent.setup();
     renderEmail(<DeliveryTab canWrite />);
-    await user.click(await screen.findByRole('button', { name: 'Retry the email to ba***@example.com' }));
+    await user.click((await screen.findAllByRole('button', { name: 'Retry the email to ba***@example.com' }))[0]!);
     await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Retry' }));
     expect((await screen.findByRole('alert')).textContent).toMatch(/retry window has passed/);
   });

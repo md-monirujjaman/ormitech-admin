@@ -114,6 +114,12 @@ export function DeliveryTab({ canWrite }: { canWrite: boolean }) {
                     <div className="mt-1 sm:hidden">
                       <Badge variant={VARIANT[row.status]}>{DELIVERY_LABEL[row.status]}</Badge>
                       {row.errorCode ? <p className="mt-1 text-xs text-muted-foreground">{errorCodeLabel(row.errorCode)}</p> : null}
+                      {canWrite && row.status === 'failed' && row.retryable ? (
+                        <Button type="button" size="sm" variant="outline" className="mt-2" aria-label={`Retry the email to ${row.recipient}`} onClick={() => setRetrying(row)}>
+                          <RotateCcw className="size-4" aria-hidden />
+                          Retry
+                        </Button>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell className="font-mono text-xs">{row.recipient}</TableCell>
@@ -124,7 +130,7 @@ export function DeliveryTab({ canWrite }: { canWrite: boolean }) {
                   <TableCell className="hidden text-right tabular-nums sm:table-cell">{row.attempts}</TableCell>
                   <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">{formatWhen(row.createdAt)}</TableCell>
                   <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">{formatWhen(row.sentAt)}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="hidden text-right sm:table-cell">
                     {canWrite && row.status === 'failed' && row.retryable ? (
                       <Button type="button" size="sm" variant="outline" aria-label={`Retry the email to ${row.recipient}`} onClick={() => setRetrying(row)}>
                         <RotateCcw className="size-4" aria-hidden />
