@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { FONT_PRESETS, footerFromText, validateBranding } from '../lib/branding';
 import { diffLines, hasChanges } from '../lib/diff';
 import { errorCodeLabel, matchesSearch, templateStatuses } from '../lib/status';
 import { insertPlaceholder, placeholdersIn } from '../lib/variables';
-import { branding } from './fixtures';
 
 describe('diffLines', () => {
   it('marks what was removed, added and kept', () => {
@@ -76,23 +74,3 @@ describe('variables', () => {
   });
 });
 
-describe('validateBranding', () => {
-  it('accepts the built-in look, and every font preset', () => {
-    const base = branding();
-    expect(validateBranding(base)).toEqual({});
-    for (const font of FONT_PRESETS) expect(validateBranding({ ...base, fontFamily: font.value })).toEqual({});
-  });
-
-  it('refuses what the API refuses, beside the field', () => {
-    const base = branding();
-    expect(validateBranding({ ...base, accentColor: 'red' }).accentColor).toBeTruthy();
-    expect(validateBranding({ ...base, logoUrl: 'http://insecure.example/l.png' }).logoUrl).toBeTruthy();
-    expect(validateBranding({ ...base, fontFamily: 'Arial" onmouseover' }).fontFamily).toBeTruthy();
-    expect(validateBranding({ ...base, productName: '' }).productName).toBeTruthy();
-    expect(validateBranding({ ...base, footerLines: Array(7).fill('x') }).footerLines).toBeTruthy();
-  });
-
-  it('turns footer text into non-empty lines', () => {
-    expect(footerFromText(' one \n\n two\n')).toEqual(['one', 'two']);
-  });
-});

@@ -1,15 +1,13 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/queryKeys';
 import { emailApi } from './emailApi';
-import type { BrandingInput, DeliveryQuery, PreviewRequest, TemplateSource } from './types';
+import type { DeliveryQuery, PreviewRequest, TemplateSource } from './types';
 
 export const useTemplates = () => useQuery({ queryKey: queryKeys.email.templates, queryFn: emailApi.list });
 export const useTemplate = (key: string) => useQuery({ queryKey: queryKeys.email.template(key), queryFn: () => emailApi.get(key) });
 export const useVersions = (key: string) => useQuery({ queryKey: queryKeys.email.versions(key), queryFn: () => emailApi.versions(key) });
 export const useVersion = (key: string, version: number | null) =>
   useQuery({ queryKey: queryKeys.email.version(key, version ?? 0), queryFn: () => emailApi.version(key, version!), enabled: version !== null });
-export const useBranding = () => useQuery({ queryKey: queryKeys.email.branding, queryFn: emailApi.branding });
-
 export const useDeliveryLogs = (query: DeliveryQuery) =>
   useInfiniteQuery({
     queryKey: queryKeys.email.logs(query),
@@ -43,15 +41,6 @@ export const usePreview = (key: string, request: PreviewRequest, enabled = true)
     retry: false,
     placeholderData: (previous) => previous,
   });
-
-export function useSaveBranding() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: BrandingInput) => emailApi.saveBranding(input),
-    // The saved look is part of every preview.
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.email.all }),
-  });
-}
 
 export function useRetryDelivery() {
   const queryClient = useQueryClient();

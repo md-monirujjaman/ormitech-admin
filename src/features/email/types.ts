@@ -78,21 +78,6 @@ export interface TestSendResult {
   errorCode?: string;
 }
 
-export interface Branding {
-  productName: string;
-  logoUrl: string | null;
-  accentColor: string;
-  textColor: string;
-  backgroundColor: string;
-  fontFamily: string;
-  headerTagline: string;
-  footerLines: string[];
-  /** False: nobody has saved a look yet and these are the built-in values. */
-  custom: boolean;
-}
-
-export type BrandingInput = Omit<Branding, 'custom'>;
-
 export interface DeliveryLog {
   id: string;
   templateKey: string;

@@ -1,7 +1,5 @@
 import { axiosClient } from '@/api/axiosClient';
 import type {
-  Branding,
-  BrandingInput,
   DeliveryPage,
   DeliveryQuery,
   EmailPreview,
@@ -31,8 +29,6 @@ export const emailApi = {
   restore: (key: string, version: number, note?: string) => unwrap<{ version: number }>(axiosClient.post(`${template(key)}/restore/${version}`, note ? { note } : {})),
   preview: (key: string, request: PreviewRequest) => unwrap<EmailPreview>(axiosClient.post(`${template(key)}/preview`, request)),
   sendTest: (key: string, to: string, useDraft: boolean) => unwrap<TestSendResult>(axiosClient.post(`${template(key)}/test`, { to, useDraft })),
-  branding: () => unwrap<Branding>(axiosClient.get(`${base}/branding`)),
-  saveBranding: (input: BrandingInput) => unwrap<null>(axiosClient.put(`${base}/branding`, input)),
   logs: (query: DeliveryQuery, before?: string) =>
     unwrap<DeliveryPage>(axiosClient.get(`${base}/logs`, { params: { ...query, limit: 25, ...(before ? { before } : {}) } })),
   retry: (id: string) => unwrap<null>(axiosClient.post(`${base}/logs/${id}/retry`)),

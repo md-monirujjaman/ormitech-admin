@@ -10,7 +10,6 @@ export const queryKeys = {
     template: (key: string) => ['email', 'templates', key] as const,
     versions: (key: string) => ['email', 'templates', key, 'versions'] as const,
     version: (key: string, version: number) => ['email', 'templates', key, 'versions', version] as const,
-    branding: ['email', 'branding'] as const,
     logs: (query: unknown) => ['email', 'logs', query] as const,
   },
   monitoring: {

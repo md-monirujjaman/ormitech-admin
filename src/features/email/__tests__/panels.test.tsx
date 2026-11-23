@@ -1,13 +1,12 @@
-import { screen, waitFor, within, fireEvent } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { axiosClient } from '@/api/axiosClient';
-import { BrandingTab } from '../components/BrandingTab';
 import { DeliveryTab } from '../components/DeliveryTab';
 import { TemplatesTab } from '../components/TemplatesTab';
 import { VersionsPanel } from '../components/VersionsPanel';
 import EmailPage from '../pages/EmailPage';
-import { branding, detail, log, templates, versions } from './fixtures';
+import { detail, log, templates, versions } from './fixtures';
 import { apiFailure, ok } from './http';
 import { renderEmail } from './utils';
 
@@ -98,19 +97,17 @@ describe('the Email page', () => {
   beforeEach(() => {
     http.get.mockImplementation(async (path: string) => {
       if (path === '/admin/email/templates') return ok(templates);
-      if (path === '/admin/email/branding') return ok(branding());
       if (path === '/admin/email/logs') return ok({ items: [], next: null });
       throw new Error(`unexpected GET ${path}`);
     });
     http.post.mockImplementation(async () => ok(preview));
   });
 
-  it('opens on templates and switches between the three views', async () => {
+  it('opens on templates and switches between the two views', async () => {
     const user = userEvent.setup();
     renderEmail(<EmailPage />);
     expect(await screen.findByText('Team invitation')).toBeTruthy();
-    await user.click(screen.getByRole('tab', { name: 'Branding' }));
-    expect(await screen.findByLabelText('Product name')).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'Branding' })).toBeNull();
     await user.click(screen.getByRole('tab', { name: 'Delivery' }));
     expect(await screen.findByText('No emails match these filters yet.')).toBeTruthy();
   });
@@ -198,73 +195,6 @@ describe('version history', () => {
     http.get.mockImplementation(async () => ok([]));
     panel();
     expect(await screen.findByText(/Nothing has been published yet/)).toBeTruthy();
-  });
-});
-
-describe('branding', () => {
-  beforeEach(() => {
-    http.get.mockImplementation(async (path: string) => {
-      if (path === '/admin/email/branding') return ok(branding());
-      if (path === '/admin/email/templates') return ok(templates);
-      throw new Error(`unexpected GET ${path}`);
-    });
-    http.post.mockImplementation(async () => ok(preview));
-    http.put.mockImplementation(async () => ok(null));
-  });
-
-  it('loads the shared look and says whether it is custom', async () => {
-    renderEmail(<BrandingTab canWrite />);
-    expect(((await screen.findByLabelText('Product name')) as HTMLInputElement).value).toBe('OrmiTech');
-    expect(screen.getByText('Built-in')).toBeTruthy();
-    expect((screen.getByLabelText('Primary colour (buttons, links)') as HTMLInputElement).value).toBe('#4f46e5');
-  });
-
-  it('saves what was changed, and says every email now uses it', async () => {
-    const user = userEvent.setup();
-    renderEmail(<BrandingTab canWrite />);
-    const name = (await screen.findByLabelText('Product name')) as HTMLInputElement;
-    await user.clear(name);
-    await user.type(name, 'Acme');
-    fireEvent.change(screen.getByLabelText('Primary colour (buttons, links)'), { target: { value: '#112233' } });
-    await user.type(screen.getByLabelText(/Footer/), '{enter}Second line');
-    await user.click(screen.getByRole('button', { name: 'Save branding' }));
-
-    await waitFor(() =>
-      expect(http.put).toHaveBeenCalledWith(
-        '/admin/email/branding',
-        expect.objectContaining({ productName: 'Acme', accentColor: '#112233', logoUrl: null, footerLines: [expect.stringMatching(/activity on your OrmiTech/), 'Second line'] }),
-      ),
-    );
-    expect(await screen.findByText(/Every email now uses this look/)).toBeTruthy();
-  });
-
-  it('will not send a colour or a logo the API would refuse, and says why beside the field', async () => {
-    const user = userEvent.setup();
-    renderEmail(<BrandingTab canWrite />);
-    fireEvent.change(await screen.findByLabelText('Text colour'), { target: { value: 'red' } });
-    await user.type(screen.getByLabelText(/Logo address/), 'http://insecure.example/l.png');
-    expect(screen.getByText('Use a colour like #4f46e5.')).toBeTruthy();
-    expect(screen.getByText(/full https:\/\/ address/)).toBeTruthy();
-    expect((screen.getByRole('button', { name: 'Save branding' }) as HTMLButtonElement).disabled).toBe(true);
-    expect(http.put).not.toHaveBeenCalled();
-  });
-
-  it('shows the API refusal when saving fails', async () => {
-    http.put.mockImplementation(async () => {
-      throw apiFailure(400, 'The template was refused: invalid_branding (fontFamily).');
-    });
-    const user = userEvent.setup();
-    renderEmail(<BrandingTab canWrite />);
-    await user.click(await screen.findByRole('button', { name: 'Save branding' }));
-    expect(await screen.findByText(/invalid_branding/)).toBeTruthy();
-  });
-
-  it('previews the saved look through the API, and is read-only without write access', async () => {
-    renderEmail(<BrandingTab canWrite={false} />);
-    expect(await screen.findByTestId('preview-subject', undefined, { timeout: 4000 })).toBeTruthy();
-    expect(http.post).toHaveBeenCalledWith('/admin/email/templates/auth.password_reset/preview', expect.objectContaining({ use: 'builtin' }));
-    expect((screen.getByLabelText('Product name') as HTMLInputElement).readOnly).toBe(true);
-    expect(screen.queryByRole('button', { name: 'Save branding' })).toBeNull();
   });
 });
 
