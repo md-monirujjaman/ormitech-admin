@@ -21,6 +21,7 @@ const ALL_PERMISSIONS: Permission[] = [
   'blog.read', 'blog.write',
   'pricing.read', 'pricing.write',
   'announcements.read', 'announcements.write',
+  'productupdates.read', 'productupdates.write',
   'tutorials.read', 'tutorials.write',
   'fastsupport.use', 'fastsupport.moderators',
   'api.read', 'api.write',
@@ -93,8 +94,8 @@ export const ROLE_DEFINITIONS: Role[] = [
   {
     name: 'CONTENT_ADMIN',
     label: 'Content Admin',
-    description: 'Documentation, blog, pricing, announcements, tutorials and feature descriptions.',
-    permissions: ['docs.read', 'docs.write', 'blog.read', 'blog.write', 'pricing.read', 'pricing.write', 'announcements.read', 'announcements.write', 'tutorials.read', 'tutorials.write', 'features.read'],
+    description: 'Documentation, blog, pricing, announcements, product updates, tutorials and feature descriptions.',
+    permissions: ['docs.read', 'docs.write', 'blog.read', 'blog.write', 'pricing.read', 'pricing.write', 'announcements.read', 'announcements.write', 'productupdates.read', 'productupdates.write', 'tutorials.read', 'tutorials.write', 'features.read'],
   },
   {
     name: 'ANALYTICS_ADMIN',

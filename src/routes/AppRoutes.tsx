@@ -35,6 +35,7 @@ const ConversationsPage = lazy(() => import('@/features/conversations/pages/Conv
 const ConversationDetailPage = lazy(() => import('@/features/conversations/pages/ConversationDetailPage'));
 const AuditLogsPage = lazy(() => import('@/features/audit-logs/pages/AuditLogsPage'));
 const AnnouncementsPage = lazy(() => import('@/features/announcements/pages/AnnouncementsPage'));
+const ProductUpdatesPage = lazy(() => import('@/features/product-updates/pages/ProductUpdatesPage'));
 const TutorialsPage = lazy(() => import('@/features/tutorials/pages/TutorialsPage'));
 const SupportDeskPage = lazy(() => import('@/features/fast-support/pages/SupportDeskPage'));
 const SupportSessionPage = lazy(() => import('@/features/fast-support/pages/SupportSessionPage'));
@@ -75,6 +76,7 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.blog,
   ROUTES.pricing,
   ROUTES.announcements,
+  ROUTES.productUpdates,
   ROUTES.tutorials,
   ROUTES.email,
   ROUTES.fastSupport,
@@ -386,6 +388,17 @@ export function AppRoutes() {
               <AdminRoute permission="announcements.read">
                 <Lazy label="Loading announcements…">
                   <AnnouncementsPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.productUpdates}
+            element={
+              <AdminRoute permission="productupdates.read">
+                <Lazy label="Loading product updates…">
+                  <ProductUpdatesPage />
                 </Lazy>
               </AdminRoute>
             }

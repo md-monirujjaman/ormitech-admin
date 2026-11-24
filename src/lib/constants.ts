@@ -49,6 +49,7 @@ export const ROUTES = {
   blog: '/blog',
   pricing: '/pricing',
   announcements: '/announcements',
+  productUpdates: '/product-updates',
   tutorials: '/tutorials',
 
   api: '/api',
