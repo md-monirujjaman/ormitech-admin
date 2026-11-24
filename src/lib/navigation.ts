@@ -83,6 +83,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Blog', href: ROUTES.blog, icon: Newspaper, permission: 'blog.read' },
       { label: 'Pricing', href: ROUTES.pricing, icon: Tag, permission: 'pricing.read' },
       { label: 'Announcements', href: ROUTES.announcements, icon: Megaphone, permission: 'announcements.read' },
+      { label: 'Product Updates', href: ROUTES.productUpdates, icon: Sparkles, permission: 'productupdates.read' },
       { label: 'Tutorials', href: ROUTES.tutorials, icon: GraduationCap, permission: 'tutorials.read' },
     ],
   },

@@ -41,6 +41,8 @@ export type Permission =
   | 'pricing.write'
   | 'announcements.read'
   | 'announcements.write'
+  | 'productupdates.read'
+  | 'productupdates.write'
   | 'tutorials.read'
   | 'tutorials.write'
   | 'api.read'
