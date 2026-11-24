@@ -35,6 +35,7 @@ const ConversationsPage = lazy(() => import('@/features/conversations/pages/Conv
 const ConversationDetailPage = lazy(() => import('@/features/conversations/pages/ConversationDetailPage'));
 const AuditLogsPage = lazy(() => import('@/features/audit-logs/pages/AuditLogsPage'));
 const AnnouncementsPage = lazy(() => import('@/features/announcements/pages/AnnouncementsPage'));
+const DashboardAgentPage = lazy(() => import('@/features/dashboard-agent/pages/DashboardAgentPage'));
 const ProductUpdatesPage = lazy(() => import('@/features/product-updates/pages/ProductUpdatesPage'));
 const TutorialsPage = lazy(() => import('@/features/tutorials/pages/TutorialsPage'));
 const SupportDeskPage = lazy(() => import('@/features/fast-support/pages/SupportDeskPage'));
@@ -77,6 +78,7 @@ const IMPLEMENTED_ROUTES = new Set<string>([
   ROUTES.pricing,
   ROUTES.announcements,
   ROUTES.productUpdates,
+  ROUTES.dashboardAgent,
   ROUTES.tutorials,
   ROUTES.email,
   ROUTES.fastSupport,
@@ -388,6 +390,17 @@ export function AppRoutes() {
               <AdminRoute permission="announcements.read">
                 <Lazy label="Loading announcements…">
                   <AnnouncementsPage />
+                </Lazy>
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.dashboardAgent}
+            element={
+              <AdminRoute permission="ai_providers.read">
+                <Lazy label="Loading the dashboard agent…">
+                  <DashboardAgentPage />
                 </Lazy>
               </AdminRoute>
             }

@@ -61,6 +61,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Features', href: ROUTES.features, icon: Sparkles, permission: 'features.read' },
       { label: 'AI Configuration', href: ROUTES.ai, icon: Bot, permission: 'ai.read' },
       { label: 'AI Gateway & Models', href: ROUTES.aiProviders, icon: BrainCircuit, permission: 'ai_providers.read' },
+      { label: 'Dashboard Agent', href: ROUTES.dashboardAgent, icon: Bot, permission: 'ai_providers.read' },
       { label: 'Credit System', href: ROUTES.aiCreditSystem, icon: Coins, permission: 'ai_credits.read' },
       { label: 'Channels', href: ROUTES.channels, icon: Radio, permission: 'channels.read' },
     ],
