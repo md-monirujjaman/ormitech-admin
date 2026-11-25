@@ -37,32 +37,23 @@ describe('ModelsTab', () => {
     serve();
   });
 
-  it('lists what the API holds: id, capabilities, context, prices, verification, status', async () => {
+  it('lists what the API holds: id, capabilities, context, verification, status', async () => {
     mount();
     const row = await rowOf('Live Model');
     expect(row.getByText('live-model')).toBeTruthy();
     expect(row.getByText('Vision (reads pictures)')).toBeTruthy();
     expect(row.getByText('128,000')).toBeTruthy();
-    // 0.15000000 is shown as 0.15: the database padding goes, nothing is rounded.
-    expect(row.getByText(/In 0\.15 · Out 0\.6 USD/)).toBeTruthy();
     expect(row.getByText('Verified')).toBeTruthy();
-    const unpriced = await rowOf('Raw Model');
-    expect(unpriced.getByText('Not priced')).toBeTruthy();
-    expect(unpriced.getByText('Not verified')).toBeTruthy();
-    expect(unpriced.getByText('not set')).toBeTruthy();
-  });
-
-  it('shows the cached price when the model has one', async () => {
-    serve([model({ pricing: { inputPerMillion: '1.00000000', outputPerMillion: '4.00000000', cachedInputPerMillion: '0.10000000', currency: 'USD', note: null, updatedAt: null } })]);
-    mount();
-    expect(await screen.findByText('Cached in 0.1')).toBeTruthy();
+    const unverified = await rowOf('Raw Model');
+    expect(unverified.getByText('Not verified')).toBeTruthy();
+    expect(unverified.getByText('not set')).toBeTruthy();
   });
 
   it('says there are no models, and that none are built in', async () => {
     serve([]);
     mount();
     expect(await screen.findByText('No models yet')).toBeTruthy();
-    expect(screen.getByText(/none are built in/)).toBeTruthy();
+    expect(screen.getByText(/None are built in/)).toBeTruthy();
   });
 
   it('says plainly when the API refuses with 403', async () => {
@@ -79,12 +70,12 @@ describe('ModelsTab', () => {
   });
 
   describe('enabling', () => {
-    it('is not possible until the model is priced and verified', async () => {
+    it('is not possible until the model is verified', async () => {
       mount();
       await rowOf('Raw Model');
       const toggle = screen.getByRole('switch', { name: 'Enable Raw Model' }) as HTMLButtonElement;
       expect(toggle.disabled).toBe(true);
-      expect(toggle.title).toBe('Set prices and verify the model first');
+      expect(toggle.title).toBe('Verify the model first');
       expect((screen.getByRole('switch', { name: 'Enable Ready Model' }) as HTMLButtonElement).disabled).toBe(false);
     });
 
@@ -183,108 +174,6 @@ describe('ModelsTab', () => {
     });
   });
 
-  describe('prices', () => {
-    const openPrices = async (name: string) => userEvent.click((await rowOf(name)).getByRole('button', { name: 'Prices' }));
-
-    it('starts from what the API holds, and starts empty for a model with no price (nothing is pre-filled)', async () => {
-      mount();
-      await openPrices('Live Model');
-      let dialog = await screen.findByRole('dialog');
-      expect((within(dialog).getByLabelText('Input price') as HTMLInputElement).value).toBe('0.15');
-      expect((within(dialog).getByLabelText('Output price') as HTMLInputElement).value).toBe('0.6');
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
-      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-
-      await openPrices('Raw Model');
-      dialog = await screen.findByRole('dialog');
-      expect((within(dialog).getByLabelText('Input price') as HTMLInputElement).value).toBe('');
-      expect((within(dialog).getByLabelText('Output price') as HTMLInputElement).value).toBe('');
-    });
-
-    it('refuses prices that are not prices, with the reason, without sending anything', async () => {
-      mount();
-      await openPrices('Raw Model');
-      const dialog = await screen.findByRole('dialog');
-      await userEvent.type(within(dialog).getByLabelText('Input price'), '-1');
-      await userEvent.type(within(dialog).getByLabelText('Output price'), '0.123456789');
-      await userEvent.clear(within(dialog).getByLabelText('Currency'));
-      await userEvent.type(within(dialog).getByLabelText('Currency'), 'usd');
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Review change' }));
-      expect(within(dialog).getByText(/The input price must be a number with up to 8 decimal places/)).toBeTruthy();
-      expect(within(dialog).getByText(/The output price must be a number with up to 8 decimal places/)).toBeTruthy();
-      expect(within(dialog).getByText(/three-letter upper-case code/)).toBeTruthy();
-      expect(http.put).not.toHaveBeenCalled();
-    });
-
-    it('shows exactly what changes, asks again, then sends the prices as the text that was typed', async () => {
-      http.put.mockResolvedValue(
-        ok({ ...live, pricing: { inputPerMillion: '0.12345678', outputPerMillion: '999999.87654321', cachedInputPerMillion: '0.00000001', currency: 'USD', note: 'read on 2026-11-01', updatedAt: '2026-11-01T12:00:00.000Z' } }),
-      );
-      mount();
-      await openPrices('Live Model');
-      const dialog = await screen.findByRole('dialog');
-      await userEvent.clear(within(dialog).getByLabelText('Input price'));
-      await userEvent.type(within(dialog).getByLabelText('Input price'), '0.12345678');
-      await userEvent.clear(within(dialog).getByLabelText('Output price'));
-      await userEvent.type(within(dialog).getByLabelText('Output price'), '999999.87654321');
-      await userEvent.type(within(dialog).getByLabelText('Cached input price (optional)'), '0.00000001');
-      await userEvent.clear(within(dialog).getByLabelText('Where the price came from (optional)'));
-      await userEvent.type(within(dialog).getByLabelText('Where the price came from (optional)'), 'read on 2026-11-01');
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Review change' }));
-
-      expect(http.put).not.toHaveBeenCalled();
-      expect(within(dialog).getByText('0.15 → 0.12345678')).toBeTruthy();
-      expect(within(dialog).getByText('0.6 → 999999.87654321')).toBeTruthy();
-      expect(within(dialog).getByText('not set → 0.00000001')).toBeTruthy();
-      expect(within(dialog).getByText(/recorded in the audit log with the old and new figures/)).toBeTruthy();
-
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Confirm and save' }));
-      await waitFor(() => expect(http.put).toHaveBeenCalledTimes(1));
-      expect(http.put).toHaveBeenCalledWith(`/admin/ai/models/${live.id}/pricing`, {
-        inputPerMillion: '0.12345678',
-        outputPerMillion: '999999.87654321',
-        cachedInputPerMillion: '0.00000001',
-        currency: 'USD',
-        note: 'read on 2026-11-01',
-      });
-      await waitFor(() => expect(notify).toHaveBeenCalledWith('Prices for Live Model were saved.', 'success'));
-    });
-
-    it('can go back from the review to change a figure', async () => {
-      mount();
-      await openPrices('Live Model');
-      const dialog = await screen.findByRole('dialog');
-      await userEvent.type(within(dialog).getByLabelText('Input price'), '9');
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Review change' }));
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Back' }));
-      expect((within(dialog).getByLabelText('Input price') as HTMLInputElement).value).toBe('0.159');
-      expect(http.put).not.toHaveBeenCalled();
-    });
-
-    it('does not trust the answer blindly: if the server stored different prices, it says so', async () => {
-      http.put.mockResolvedValue(ok({ ...live, pricing: { ...live.pricing, inputPerMillion: '9.00000000' } }));
-      mount();
-      await openPrices('Live Model');
-      const dialog = await screen.findByRole('dialog');
-      await userEvent.clear(within(dialog).getByLabelText('Input price'));
-      await userEvent.type(within(dialog).getByLabelText('Input price'), '1');
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Review change' }));
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Confirm and save' }));
-      await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('saved different prices'), 'warning'));
-    });
-
-    it('shows the API’s refusal inside the dialog', async () => {
-      http.put.mockRejectedValue(apiFailure(400, 'Validation failed', [{ field: 'inputPerMillion', messages: ['must not exceed 1000000 per million tokens'] }]));
-      mount();
-      await openPrices('Live Model');
-      const dialog = await screen.findByRole('dialog');
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Review change' }));
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Confirm and save' }));
-      expect(await within(dialog).findByText('must not exceed 1000000 per million tokens')).toBeTruthy();
-      expect(notify).not.toHaveBeenCalled();
-    });
-  });
-
   describe('adding and editing', () => {
     it('refuses a model id with spaces and an empty name before asking the API', async () => {
       mount();
@@ -313,7 +202,7 @@ describe('ModelsTab', () => {
       expect(http.post).not.toHaveBeenCalled();
     });
 
-    it('adds a model, with no price and the chat capability, and says what is still to do', async () => {
+    it('adds a model, with the chat capability, and says what is still to do', async () => {
       http.post.mockResolvedValue(ok(model({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', modelId: 'fixture/new', displayName: 'Fixture New' })));
       mount();
       await screen.findByText('Live Model');
@@ -326,7 +215,7 @@ describe('ModelsTab', () => {
       await waitFor(() =>
         expect(http.post).toHaveBeenCalledWith('/admin/ai/models', { modelId: 'fixture/new', displayName: 'Fixture New', contextWindow: 64000, capabilities: ['chat'] }),
       );
-      await waitFor(() => expect(notify).toHaveBeenCalledWith('Fixture New was added. Set its prices and verify it before enabling.', 'success'));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('Fixture New was added. Verify it before enabling.', 'success'));
     });
 
     it('edits the display name and context window but not the model id', async () => {

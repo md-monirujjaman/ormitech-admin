@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermissions } from '@/hooks/usePermissions';
+import { AccountsTab } from '../components/AccountsTab';
 import { DashboardTab } from '../components/DashboardTab';
 import { FilterBar } from '../components/FilterBar';
 import { LimitsTab } from '../components/LimitsTab';
@@ -15,7 +16,7 @@ import { SettingsTab } from '../components/SettingsTab';
 import { defaultPeriod, periodToFilters, type FilterDraft } from '../period';
 import type { Filters } from '../types';
 
-type TabName = 'dashboard' | 'operations' | 'plans' | 'settings' | 'limits';
+type TabName = 'accounts' | 'dashboard' | 'operations' | 'plans' | 'settings' | 'limits';
 
 const blankDraft = (): FilterDraft => ({ ...defaultPeriod(), organizationId: '', kind: '', model: '', status: '' });
 
@@ -28,7 +29,7 @@ const blankDraft = (): FilterDraft => ({ ...defaultPeriod(), organizationId: '',
 export default function CreditSystemPage() {
   const { can } = usePermissions();
   const canWrite = can('ai_credits.write');
-  const [tab, setTab] = useState<TabName>('dashboard');
+  const [tab, setTab] = useState<TabName>('accounts');
   const [pending, setPending] = useState<TabName | null>(null);
   const [draft, setDraft] = useState<FilterDraft>(blankDraft);
   const [filters, setFilters] = useState<Filters>(() => periodToFilters(draft));
@@ -67,13 +68,14 @@ export default function CreditSystemPage() {
     <div className="space-y-6">
       <PageHeader
         title="Credit system"
-        description="How AI cost becomes credits, who is in the pilot, what each workspace may spend, and what the AI actually cost. Credit mode is off unless you change it on the Settings tab. Every change is recorded in the audit log."
+        description="Each user’s credit wallet and plan, what the AI cost, and the rules behind it. Credit mode is off unless you change it on the Settings tab. Every change is recorded in the audit log."
         showMockNotice={false}
         actions={<Coins className="size-5 text-muted-foreground" aria-hidden />}
       />
 
       <Tabs value={tab} onValueChange={change}>
         <TabsList>
+          <TabsTrigger value="accounts">Accounts</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="operations">Operations</TabsTrigger>
           <TabsTrigger value="plans">Plans & budgets</TabsTrigger>
@@ -93,6 +95,9 @@ export default function CreditSystemPage() {
             />
           </div>
         )}
+        <TabsContent value="accounts" className="mt-4">
+          <AccountsTab canWrite={canWrite} />
+        </TabsContent>
         <TabsContent value="dashboard" className="mt-4">
           <DashboardTab filters={filters} />
         </TabsContent>

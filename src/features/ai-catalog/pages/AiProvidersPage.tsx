@@ -5,7 +5,6 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermissions } from '@/hooks/usePermissions';
-import { CreditPolicyTab } from '@/features/ai-credits/components/CreditPolicyTab';
 import { ModelsTab } from '../components/ModelsTab';
 import { ConnectionTab } from '../components/ConnectionTab';
 import { InstructionsTab } from '../components/InstructionsTab';
@@ -26,8 +25,6 @@ const TONE_STYLE: Record<NoticeTone, { box: string; icon: typeof CheckCircle2 }>
 export default function AiProvidersPage() {
   const { can } = usePermissions();
   const canWrite = can('ai_providers.write');
-  const canReadCredits = can('ai_credits.read');
-  const canWriteCredits = can('ai_credits.write');
   const [notice, setNotice] = useState<{ message: string; tone: NoticeTone } | null>(null);
 
   const notify = useCallback((message: string, tone: NoticeTone = 'success') => setNotice({ message, tone }), []);
@@ -57,7 +54,7 @@ export default function AiProvidersPage() {
     <div className="space-y-6">
       <PageHeader
         title="AI gateway & models"
-        description="Every AI request goes to OpenRouter through one key set on the server. Choose which models answer, what they cost, how replies are routed and what instructions they follow. Every workspace is answered by these models. Every change is recorded in the audit log."
+        description="Every AI request goes to OpenRouter through one key set on the server. Choose which models answer, how replies are routed and what instructions they follow. Credits are set in the Credit System page. Every workspace is answered by these models. Every change is recorded in the audit log."
         showMockNotice={false}
       />
 
@@ -74,10 +71,9 @@ export default function AiProvidersPage() {
       <Tabs defaultValue="connection">
         <TabsList>
           <TabsTrigger value="connection">Connection</TabsTrigger>
-          <TabsTrigger value="models">Models & pricing</TabsTrigger>
+          <TabsTrigger value="models">Models</TabsTrigger>
           <TabsTrigger value="routing">Routing</TabsTrigger>
           <TabsTrigger value="instructions">Instructions</TabsTrigger>
-          {canReadCredits && <TabsTrigger value="credits">Credit policy</TabsTrigger>}
         </TabsList>
         <TabsContent value="connection" className="pt-4">
           <ConnectionTab canWrite={canWrite} notify={notify} />
@@ -91,11 +87,6 @@ export default function AiProvidersPage() {
         <TabsContent value="instructions" className="pt-4">
           <InstructionsTab canWrite={canWrite} notify={notify} />
         </TabsContent>
-        {canReadCredits && (
-          <TabsContent value="credits" className="pt-4">
-            <CreditPolicyTab canWrite={canWriteCredits} />
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );

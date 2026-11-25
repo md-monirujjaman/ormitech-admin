@@ -1,4 +1,4 @@
-import { Pencil, Search, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Badge } from '@/components/ui/badge';
@@ -10,14 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LoadFailed } from '@/features/ai-catalog/components/LoadFailed';
-import { newKey } from '@/features/ai-credits/idempotency';
 import { apiErrorMessage } from '@/lib/apiError';
-import { creditSystemApi } from '../creditSystemApi';
-import { canonical } from '../decimal';
 import { formatCredits, formatUsd, formatWhen, NOT_AVAILABLE } from '../format';
-import { useGrantBudget, usePlanBudgets, useRemoveLimits, useRemovePlanBudget, useSaveLimits, useSavePlanBudget, useWorkspaceBudget, useWorkspaceLimits } from '../hooks';
-import { fieldErrors, grantSchema, planBudgetSchema } from '../schemas';
-import type { PlanBudget, WorkspaceHit } from '../types';
+import { usePlanBudgets, useRemovePlanBudget, useSavePlanBudget } from '../hooks';
+import { fieldErrors, planBudgetSchema } from '../schemas';
+import type { PlanBudget } from '../types';
 import { Notice, Problem, type NoticeState } from './shared';
 
 const MISSING_LABEL: Record<string, string> = { budget: 'budget', markup: 'markup', creditValueUsd: 'credit value', roundingMode: 'rounding mode', decimalPlaces: 'precision' };
@@ -174,218 +171,11 @@ function PlanConfiguration({ canWrite }: { canWrite: boolean }) {
   );
 }
 
-function WorkspaceBudgetPanel({ organizationId, canWrite }: { organizationId: string; canWrite: boolean }) {
-  const query = useWorkspaceBudget(organizationId);
-  const limits = useWorkspaceLimits();
-  const saveLimits = useSaveLimits();
-  const removeLimits = useRemoveLimits();
-  const grant = useGrantBudget();
-  const [override, setOverride] = useState<string | null>(null);
-  const [overrideProblem, setOverrideProblem] = useState<string | undefined>();
-  const [granting, setGranting] = useState<{ reason: string; key: string } | null>(null);
-  const [grantProblem, setGrantProblem] = useState<string | undefined>();
-  const [notice, setNotice] = useState<NoticeState | null>(null);
-
-  if (query.isError) return <LoadFailed error={query.error} what="the workspace budget" onRetry={() => void query.refetch()} />;
-  if (query.isLoading || !query.data) return <Skeleton className="h-48 w-full" />;
-  const data = query.data;
-  const existing = limits.data?.items.find((row) => row.organizationId === organizationId) ?? null;
-
-  const submitOverride = () => {
-    const value = (override ?? '').trim();
-    if (value !== '' && !(/^\d{1,12}(\.\d{1,6})?$/.test(value) && /[1-9]/.test(value))) return setOverrideProblem('A positive USD amount with up to 6 decimal places, or empty to use the plan’s budget');
-    setOverrideProblem(undefined);
-    const others = { maxSpendUsd: existing?.maxSpendUsd ?? null, monthlyLimitUsd: existing?.monthlyLimitUsd ?? null, dailyLimitUsd: existing?.dailyLimitUsd ?? null, perTurnLimitUsd: existing?.perTurnLimitUsd ?? null };
-    const nothingLeft = value === '' && Object.values(others).every((entry) => entry === null);
-    const done = () => { setOverride(null); setNotice({ message: value === '' ? 'The workspace now uses its plan’s budget.' : 'The workspace budget was saved.', tone: 'success' }); };
-    if (nothingLeft) {
-      if (existing) removeLimits.mutate(organizationId, { onSuccess: done });
-      else done();
-      return;
-    }
-    saveLimits.mutate({ organizationId, limits: { expectedVersion: existing?.version ?? null, budgetUsd: value === '' ? null : value, ...others } }, { onSuccess: done });
-  };
-
-  const submitGrant = () => {
-    const parsed = grantSchema.safeParse({ reason: granting?.reason ?? '' });
-    if (!parsed.success) return setGrantProblem(parsed.error.issues[0]?.message);
-    setGrantProblem(undefined);
-    grant.mutate(
-      { organizationId, grant: { expectedCredits: data.effective.credits!, reason: parsed.data.reason, idempotencyKey: granting!.key } },
-      { onSuccess: (result) => { setGranting(null); setNotice({ message: result.replay ? 'That grant was already made: nothing was added again.' : `${formatCredits(result.credits)} credits were granted.`, tone: 'success' }); } },
-    );
-  };
-
-  return (
-    <div className="space-y-4">
-      <Notice notice={notice} onDismiss={() => setNotice(null)} />
-      <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[14rem_1fr]">
-        <dt className="text-muted-foreground">Workspace</dt>
-        <dd className="font-medium">{data.name}</dd>
-        <dt className="text-muted-foreground">Plan</dt>
-        <dd>
-          {data.plan.name ?? data.plan.slug} · budget {data.plan.usdBudget === null ? 'not set' : formatUsd(data.plan.usdBudget)} · markup {data.plan.markupPercent === null ? 'not set' : `${data.plan.markupPercent}%`}
-        </dd>
-        <dt className="text-muted-foreground">This workspace’s own budget</dt>
-        <dd>{data.workspaceBudgetUsd === null ? 'None: the plan’s budget applies' : formatUsd(data.workspaceBudgetUsd)}</dd>
-        <dt className="text-muted-foreground">Budget in force</dt>
-        <dd className="font-medium">{data.effective.budgetUsd === null ? NOT_AVAILABLE : `${formatUsd(data.effective.budgetUsd)} (${data.effective.source === 'workspace' ? 'workspace override' : 'plan default'})`}</dd>
-        <dt className="text-muted-foreground">Worth in credits</dt>
-        <dd className="font-medium tabular-nums">{data.effective.credits === null ? `${NOT_AVAILABLE} · ${missingText(data.effective.missing)}` : formatCredits(data.effective.credits)}</dd>
-        <dt className="text-muted-foreground">Credits in the wallet now</dt>
-        <dd className="tabular-nums">{formatCredits(data.wallet.available)} available · {formatCredits(data.wallet.reserved)} held</dd>
-      </dl>
-
-      {canWrite && (
-        <div className="space-y-3 border-t border-border pt-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="override-budget">Set this workspace’s own budget (USD)</Label>
-              <Input id="override-budget" value={override ?? ''} placeholder="e.g. 100" inputMode="decimal" autoComplete="off" className="w-48" onChange={(event) => setOverride(event.target.value)} />
-            </div>
-            <Button type="button" variant="outline" disabled={override === null || saveLimits.isPending || removeLimits.isPending} onClick={submitOverride}>
-              Save budget
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">Raise or lower the workspace’s budget, or leave the box empty and save to go back to the plan’s. The credits are recalculated. The workspace’s other limits are kept as they are.</p>
-          <Problem>{overrideProblem}</Problem>
-          {saveLimits.error ? <Problem>{apiErrorMessage(saveLimits.error, 'The budget could not be saved.')}</Problem> : null}
-          <div>
-            <Button type="button" disabled={data.effective.credits === null} onClick={() => { grant.reset(); setGrantProblem(undefined); setGranting({ reason: '', key: newKey() }); }}>
-              Grant {data.effective.credits === null ? 'budget' : `${formatCredits(data.effective.credits)} credits`}
-            </Button>
-            <p className="mt-1 text-xs text-muted-foreground">Nothing renews by itself: the workspace receives its budget only when you grant it here.</p>
-          </div>
-        </div>
-      )}
-
-      <div>
-        <p className="mb-2 text-sm font-medium">Budgets granted</p>
-        {data.grants.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing has been granted to this workspace.</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>When</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>API budget</TableHead>
-                <TableHead>Markup</TableHead>
-                <TableHead className="text-right">Credits</TableHead>
-                <TableHead>Reason</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.grants.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="text-xs">{formatWhen(row.createdAt)}</TableCell>
-                  <TableCell>{row.source === 'workspace' ? 'Workspace override' : 'Plan'}</TableCell>
-                  <TableCell>{formatUsd(row.usdBudget)}</TableCell>
-                  <TableCell>{canonical(row.markupPercent)}%</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCredits(row.credits)}</TableCell>
-                  <TableCell className="max-w-56 truncate text-xs">{row.reason}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
-
-      {granting && (
-        <ConfirmDialog
-          open
-          onOpenChange={(open) => (open || grant.isPending ? undefined : setGranting(null))}
-          title={`Grant ${formatCredits(data.effective.credits)} credits to ${data.name}?`}
-          description="This adds credit to the workspace’s wallet. It appears in the ledger under your name, with the reason, and cannot be taken back except by an adjustment."
-          confirmLabel="Grant credits"
-          isPending={grant.isPending}
-          onConfirm={submitGrant}
-        >
-          <div className="space-y-2 text-sm">
-            <p className="font-mono text-xs">
-              {formatUsd(data.effective.budgetUsd)} × (1 + {data.effective.markupPercent}%) ÷ credit value = {formatCredits(data.effective.credits)} credits
-            </p>
-            <div className="space-y-1.5">
-              <Label htmlFor="grant-reason">Reason</Label>
-              <Input id="grant-reason" value={granting.reason} autoComplete="off" onChange={(event) => setGranting({ ...granting, reason: event.target.value })} />
-              <Problem>{grantProblem}</Problem>
-            </div>
-            {grant.error ? <Problem>{apiErrorMessage(grant.error, 'The grant could not be made.')}</Problem> : null}
-          </div>
-        </ConfirmDialog>
-      )}
-    </div>
-  );
-}
-
-/** Finds a workspace by workspace ID, client (user) ID or name, and manages its budget. */
-function WorkspaceBudget({ canWrite }: { canWrite: boolean }) {
-  const [term, setTerm] = useState('');
-  const [hits, setHits] = useState<WorkspaceHit[] | null>(null);
-  const [problem, setProblem] = useState<string | undefined>();
-  const [searching, setSearching] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
-
-  const search = async () => {
-    const q = term.trim();
-    if (q.length < 2) return setProblem('Enter at least 2 characters');
-    setProblem(undefined);
-    setSearching(true);
-    setSelected(null);
-    try {
-      setHits(await creditSystemApi.searchWorkspaces(q));
-    } catch (error) {
-      setProblem(apiErrorMessage(error, 'The search failed.'));
-      setHits(null);
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Workspace budget</CardTitle>
-        <CardDescription>Find a workspace by its workspace ID, a client’s user ID, or its name. A workspace can have its own USD budget in place of its plan’s, for example an Enterprise client with more than the plan default.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form className="flex flex-wrap items-end gap-3" noValidate onSubmit={(event) => { event.preventDefault(); void search(); }}>
-          <div className="space-y-1.5">
-            <Label htmlFor="budget-search">Workspace ID, client ID or name</Label>
-            <Input id="budget-search" value={term} placeholder="e.g. 018f0000-0000-7000-8000-000000000001" autoComplete="off" className="w-96 max-w-full" onChange={(event) => setTerm(event.target.value)} />
-          </div>
-          <Button type="submit" variant="outline" disabled={searching}>
-            <Search className="size-4" aria-hidden /> Find
-          </Button>
-        </form>
-        <Problem>{problem}</Problem>
-        {hits !== null && hits.length === 0 && <p className="text-sm text-muted-foreground">No workspace matches.</p>}
-        {hits !== null && hits.length > 0 && (
-          <ul className="divide-y divide-border rounded-md border border-border" aria-label="Workspaces found">
-            {hits.map((hit) => (
-              <li key={hit.id}>
-                <button type="button" className="flex w-full items-center justify-between gap-3 p-3 text-left text-sm hover:bg-muted/50" aria-pressed={selected === hit.id} onClick={() => setSelected(hit.id)}>
-                  <span>
-                    <span className="font-medium">{hit.name}</span> <span className="font-mono text-xs text-muted-foreground">{hit.id}</span>
-                  </span>
-                  <Badge variant="outline">{hit.plan}</Badge>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {selected && <WorkspaceBudgetPanel key={selected} organizationId={selected} canWrite={canWrite} />}
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Plan configuration and workspace budgets: where the markup and the budgets are set, and where a workspace is granted its budget. */
+/** Plan configuration: where each plan's USD budget and markup are set. Credits reach a user by themselves from the plan the user is on (see the Accounts tab). */
 export function PlansTab({ canWrite }: { canWrite: boolean }) {
   return (
     <div className="space-y-6">
       <PlanConfiguration canWrite={canWrite} />
-      <WorkspaceBudget canWrite={canWrite} />
     </div>
   );
 }

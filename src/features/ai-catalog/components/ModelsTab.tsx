@@ -1,4 +1,4 @@
-import { BadgeCheck, CircleDollarSign, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { BadgeCheck, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Badge } from '@/components/ui/badge';
@@ -9,12 +9,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { apiErrorMessage } from '@/lib/apiError';
-import { VERIFICATION_TEXT, formatPrice, pricesEqual } from '../format';
-import { useAiModels, useCreateModel, useDeleteModel, useSetModelEnabled, useSetModelPricing, useUpdateModel, useVerifyModel } from '../hooks';
+import { VERIFICATION_TEXT } from '../format';
+import { useAiModels, useCreateModel, useDeleteModel, useSetModelEnabled, useUpdateModel, useVerifyModel } from '../hooks';
 import { CAPABILITY_LABELS } from '../schemas';
 import type { AiModel } from '../types';
 import { LoadFailed } from './LoadFailed';
-import { ModelFormDialog, PricingDialog } from './ModelDialogs';
+import { ModelFormDialog } from './ModelDialogs';
 import { VerifiedBadge } from './StatusBadges';
 import type { Notify } from './notice';
 
@@ -24,13 +24,11 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
   const modelsQuery = useAiModels();
   const create = useCreateModel();
   const update = useUpdateModel();
-  const setPricing = useSetModelPricing();
   const verify = useVerifyModel();
   const setEnabled = useSetModelEnabled();
   const remove = useDeleteModel();
 
   const [form, setForm] = useState<{ open: boolean; editing: AiModel | null }>({ open: false, editing: null });
-  const [pricingFor, setPricingFor] = useState<AiModel | null>(null);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
 
   if (modelsQuery.isError) return <LoadFailed error={modelsQuery.error} what="the model list" onRetry={() => void modelsQuery.refetch()} />;
@@ -71,12 +69,12 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
 
   const confirming = setEnabled.isPending || remove.isPending;
   const confirmError = confirm?.kind === 'delete' ? remove.error : setEnabled.error;
-  const ready = (model: AiModel) => model.pricing.inputPerMillion !== null && model.pricing.outputPerMillion !== null && model.availabilityVerifiedAt !== null && model.capabilities.includes('chat');
+  const ready = (model: AiModel) => model.availabilityVerifiedAt !== null && model.capabilities.includes('chat');
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">A model can be used only when it is priced, verified with OpenRouter and enabled, and chosen in the Routing tab. Every workspace is answered by these models.</p>
+        <p className="text-sm text-muted-foreground">A model can be used only when it is verified with OpenRouter and enabled, and chosen in the Routing tab. Every workspace is answered by these models. What a request costs is OpenRouter’s own figure, checked per model in the Credit System page: nothing is typed here.</p>
         {canWrite && (
           <Button size="sm" onClick={() => openForm(null)}>
             <Plus className="size-4" aria-hidden />
@@ -89,7 +87,7 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
         <EmptyState
           icon={Sparkles}
           title="No models yet"
-          description="Add the models you want to use with OpenRouter’s own ids. Prices and context sizes are entered from OpenRouter’s model pages; none are built in."
+          description="Add the models you want to use with OpenRouter’s own ids. None are built in."
         />
       ) : (
         <Card className="overflow-x-auto p-0">
@@ -99,7 +97,6 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
                 <TableHead>Model</TableHead>
                 <TableHead>Capabilities</TableHead>
                 <TableHead>Context</TableHead>
-                <TableHead>Price per 1M tokens</TableHead>
                 <TableHead>Verified</TableHead>
                 <TableHead>Enabled</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -108,7 +105,6 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
             <TableBody>
               {models.map((model) => {
                 const verifying = verify.isPending && verify.variables === model.id;
-                const priced = model.pricing.inputPerMillion !== null && model.pricing.outputPerMillion !== null;
                 return (
                   <TableRow key={model.id}>
                     <TableCell>
@@ -129,18 +125,6 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
                     </TableCell>
                     <TableCell className="text-sm tabular-nums text-foreground">{model.contextWindow === null ? <span className="text-muted-foreground">not set</span> : model.contextWindow.toLocaleString()}</TableCell>
                     <TableCell>
-                      {priced ? (
-                        <div className="space-y-0.5 text-sm tabular-nums text-foreground">
-                          <div>
-                            In {formatPrice(model.pricing.inputPerMillion)} · Out {formatPrice(model.pricing.outputPerMillion)} {model.pricing.currency}
-                          </div>
-                          {model.pricing.cachedInputPerMillion !== null && <div className="text-xs text-muted-foreground">Cached in {formatPrice(model.pricing.cachedInputPerMillion)}</div>}
-                        </div>
-                      ) : (
-                        <Badge variant="outline">Not priced</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
                       <VerifiedBadge model={model} />
                     </TableCell>
                     <TableCell>
@@ -148,7 +132,7 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
                         checked={model.enabled}
                         disabled={!canWrite || (!model.enabled && !ready(model))}
                         aria-label={`${model.enabled ? 'Disable' : 'Enable'} ${model.displayName}`}
-                        title={!model.enabled && !ready(model) ? 'Set prices and verify the model first' : undefined}
+                        title={!model.enabled && !ready(model) ? 'Verify the model first' : undefined}
                         onCheckedChange={(next) => {
                           setEnabled.reset();
                           setConfirm({ kind: next ? 'enable' : 'disable', model });
@@ -161,19 +145,6 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
                           <Button variant="outline" size="sm" disabled={verifying} onClick={() => runVerify(model)}>
                             <BadgeCheck className="size-4" aria-hidden />
                             {verifying ? 'Verifying…' : 'Verify'}
-                          </Button>
-                        )}
-                        {canWrite && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setPricing.reset();
-                              setPricingFor(model);
-                            }}
-                          >
-                            <CircleDollarSign className="size-4" aria-hidden />
-                            Prices
                           </Button>
                         )}
                         {canWrite && (
@@ -216,7 +187,7 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
           create.mutate(input, {
             onSuccess: (model) => {
               closeForm();
-              notify(`${model.displayName} was added. Set its prices and verify it before enabling.`, 'success');
+              notify(`${model.displayName} was added. Verify it before enabling.`, 'success');
             },
           })
         }
@@ -233,32 +204,6 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
         }
       />
 
-      <PricingDialog
-        open={pricingFor !== null}
-        onOpenChange={(open) => (open ? undefined : setPricingFor(null))}
-        model={pricingFor ? live(pricingFor) : null}
-        isPending={setPricing.isPending}
-        error={setPricing.error}
-        onSubmit={(id, input) =>
-          setPricing.mutate(
-            { id, input },
-            {
-              onSuccess: (saved) => {
-                setPricingFor(null);
-                // The server's answer is what counts: say so if it is not what was asked for.
-                const same =
-                  pricesEqual(saved.pricing.inputPerMillion, input.inputPerMillion) &&
-                  pricesEqual(saved.pricing.outputPerMillion, input.outputPerMillion) &&
-                  pricesEqual(saved.pricing.cachedInputPerMillion, input.cachedInputPerMillion) &&
-                  saved.pricing.currency === input.currency;
-                if (same) notify(`Prices for ${saved.displayName} were saved.`, 'success');
-                else notify(`The server saved different prices for ${saved.displayName} than were entered. Check them before relying on them.`, 'warning');
-              },
-            },
-          )
-        }
-      />
-
       {confirm && (
         <ConfirmDialog
           open
@@ -269,7 +214,7 @@ export function ModelsTab({ canWrite, notify }: { canWrite: boolean; notify: Not
               ? 'It can then answer customers when it is chosen in the Routing tab.'
               : confirm.kind === 'disable'
                 ? 'It stops answering customers right away if it is in use. Nothing else changes.'
-                : 'It is removed from the list. A model that is in use in the Routing tab, or that has a price history or recorded usage, cannot be deleted: switch it off instead.'
+                : 'It is removed from the list. A model that is in use in the Routing tab, or that has recorded usage, cannot be deleted: switch it off instead.'
           }`}
           confirmLabel={confirm.kind === 'enable' ? 'Enable model' : confirm.kind === 'disable' ? 'Disable model' : 'Delete model'}
           destructive={confirm.kind !== 'enable'}

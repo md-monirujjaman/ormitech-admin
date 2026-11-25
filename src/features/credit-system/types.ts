@@ -296,3 +296,30 @@ export interface VerifyModelInput {
   evidence: string;
   generationIds: string[];
 }
+
+/** A user who owns workspaces, with the figures of the user's main wallet (shared by every workspace the user owns). */
+export interface CreditAccountRow {
+  userId: string;
+  email: string;
+  name: string;
+  planSlug: string;
+  workspaces: number;
+  allocatedUsd: string;
+  allocatedCredits: string;
+  availableCredits: string;
+  usedCredits: string;
+}
+
+export interface CreditAccountList {
+  items: CreditAccountRow[];
+  limit: number;
+}
+
+export interface CreditAccount {
+  user: { userId: string; email: string; name: string };
+  plan: { slug: string; updatedAt: string | null };
+  wallet: { organizationId: string; allocatedUsd: string; allocatedCredits: string; availableCredits: string; heldCredits: string; usedCredits: string };
+  workspaces: { organizationId: string; name: string; slug: string; usedCredits: string; uses: number }[];
+  allocations: { id: string; source: string; planSlug: string; usdGranted: string; usdTotalAfter: string; markupPercent: string; credits: string; createdAt: string }[];
+  recentUse: { id: string; workspaceId: string; workspaceName: string | null; credits: string; reason: string | null; createdAt: string }[];
+}

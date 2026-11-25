@@ -24,6 +24,7 @@ function serve() {
     if (path === '/admin/ai/credit-settings/workspace-limits') return ok(limitsList([]));
     if (path === '/admin/ai/credit-settings/model-verifications') return ok({ models: [], history: [] });
     if (path === '/admin/ai/credit-plans') return ok({ conversion: { ready: false, missing: ['creditValueUsd'] }, items: [] });
+    if (path === '/admin/ai/credit-accounts') return ok({ items: [], limit: 25 });
     if (path === '/admin/ai/credit-dashboard') return ok(dashboard());
     if (path === '/admin/ai/credit-operations') return ok({ costUnit: { verified: false, unit: null }, items: [], nextCursor: null });
     throw new Error(`unexpected GET ${path}`);
@@ -38,11 +39,13 @@ describe('the credit system page', () => {
     serve();
   });
 
-  it('opens on the dashboard, with the five areas as tabs and the credit mode said to be off unless changed', async () => {
+  it('opens on the accounts, with the six areas as tabs and the credit mode said to be off unless changed', async () => {
     renderWithClient(<CreditSystemPage />);
-    expect(screen.getByRole('tab', { name: 'Dashboard' }).getAttribute('data-state')).toBe('active');
-    for (const name of ['Operations', 'Plans & budgets', 'Settings', 'Workspace limits']) expect(screen.getByRole('tab', { name: name })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Accounts' }).getAttribute('data-state')).toBe('active');
+    for (const name of ['Dashboard', 'Operations', 'Plans & budgets', 'Settings', 'Workspace limits']) expect(screen.getByRole('tab', { name: name })).toBeTruthy();
     expect(screen.getByText(/Credit mode is off unless you change it/)).toBeTruthy();
+    expect(await screen.findByText('No user matches.')).toBeTruthy();
+    await userEvent.click(screen.getByRole('tab', { name: 'Dashboard' }));
     expect(await screen.findByText('Credits issued')).toBeTruthy();
   });
 

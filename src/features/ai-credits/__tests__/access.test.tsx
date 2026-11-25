@@ -25,19 +25,16 @@ describe('who sees AI credits', () => {
   });
 });
 
-describe('the credit policy tab', () => {
+describe('the AI gateway tabs', () => {
   beforeEach(() => http.get.mockImplementation(async () => ok([])));
 
-  it('is offered to someone who may read credits', async () => {
-    granted.list = ['ai_providers.read', 'ai_credits.read'];
-    renderWithClient(<AiProvidersPage />);
-    expect(screen.getByRole('tab', { name: 'Credit policy' })).toBeTruthy();
-  });
-
-  it('is not there for anyone else, and the other tabs are untouched', async () => {
-    granted.list = ['ai_providers.read'];
-    renderWithClient(<AiProvidersPage />);
-    expect(screen.queryByRole('tab', { name: 'Credit policy' })).toBeNull();
-    for (const name of ['Connection', 'Models & pricing', 'Routing', 'Instructions']) expect(screen.getByRole('tab', { name })).toBeTruthy();
+  it('has no Credit policy tab for anyone any more: credits are set in the Credit System page', async () => {
+    for (const list of [['ai_providers.read', 'ai_credits.read'], ['ai_providers.read']]) {
+      granted.list = list;
+      const view = renderWithClient(<AiProvidersPage />);
+      expect(screen.queryByRole('tab', { name: 'Credit policy' })).toBeNull();
+      for (const name of ['Connection', 'Models', 'Routing', 'Instructions']) expect(screen.getByRole('tab', { name })).toBeTruthy();
+      view.unmount();
+    }
   });
 });

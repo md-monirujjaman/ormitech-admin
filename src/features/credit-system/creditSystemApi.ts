@@ -1,5 +1,5 @@
 import { axiosClient } from '@/api/axiosClient';
-import type { CostUnitInput, HoldInput, CreditMode, CreditSettings, Dashboard, FinancialInput, Filters, GrantBudgetInput, LimitsInput, LimitsList, OperationsPage, PilotWorkspace, PlanBudgetInput, PlanBudgetList, ModelVerificationList, Preview, TurnDetail, VerifyModelInput, WorkspaceBudget, WorkspaceHit } from './types';
+import type { CreditAccount, CreditAccountList, CostUnitInput, HoldInput, CreditMode, CreditSettings, Dashboard, FinancialInput, Filters, GrantBudgetInput, LimitsInput, LimitsList, OperationsPage, PilotWorkspace, PlanBudgetInput, PlanBudgetList, ModelVerificationList, Preview, TurnDetail, VerifyModelInput, WorkspaceBudget, WorkspaceHit } from './types';
 
 const unwrap = <T>(promise: Promise<{ data: { data: T } }>) => promise.then((response) => response.data.data);
 const BASE = '/admin/ai/credit-settings';
@@ -37,6 +37,10 @@ export const creditSystemApi = {
   searchWorkspaces: (q: string) => unwrap<WorkspaceHit[]>(axiosClient.get('/admin/ai/credit-budget/search', { params: { q } })),
   workspaceBudget: (organizationId: string) => unwrap<WorkspaceBudget>(axiosClient.get(`/admin/organizations/${organizationId}/ai-credit-budget`)),
   grantBudget: (organizationId: string, input: GrantBudgetInput) => unwrap<{ replay: boolean; credits: string }>(axiosClient.post(`/admin/organizations/${organizationId}/ai-credits/budget-grants`, input)),
+
+  accounts: (q: string) => unwrap<CreditAccountList>(axiosClient.get('/admin/ai/credit-accounts', q ? { params: { q } } : undefined)),
+  account: (userId: string) => unwrap<CreditAccount>(axiosClient.get(`/admin/ai/credit-accounts/${userId}`)),
+  setAccountPlan: (userId: string, planSlug: string) => unwrap<CreditAccount>(axiosClient.put(`/admin/ai/credit-accounts/${userId}/plan`, { planSlug })),
 
   modelVerifications: () => unwrap<ModelVerificationList>(axiosClient.get(`${BASE}/model-verifications`)),
   verifyModel: (input: VerifyModelInput) => unwrap<ModelVerificationList>(axiosClient.post(`${BASE}/model-verifications`, input)),
