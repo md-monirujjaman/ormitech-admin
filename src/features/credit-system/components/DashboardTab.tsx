@@ -60,7 +60,9 @@ export function DashboardTab({ filters }: { filters: Filters }) {
   return (
     <div className="space-y-6">
       <div role="status" className={`rounded-md border p-3 text-sm ${verified ? 'border-success/40 bg-success/10' : 'border-warning/40 bg-warning/10'}`}>
-        {verified
+        {verified && data.costUnit.unit === null
+          ? 'Every request’s cost is the provider’s own USD figure, read from its answer: nothing is estimated or priced by hand.'
+          : verified
           ? `Costs reported in ${data.costUnit.unit} are counted as USD at ${data.costUnit.usdFactor} USD per unit (recorded on the Settings tab). Costs in any other unit are shown separately.`
           : 'The provider’s cost unit has not been verified as USD, so no USD total can be shown (Not available). The costs the provider reported are listed below in their own unit, and are never added to a USD figure.'}
       </div>

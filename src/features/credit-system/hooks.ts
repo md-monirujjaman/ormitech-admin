@@ -12,6 +12,8 @@ export const systemKeys = {
   workspace: (organizationId: string) => ['credit-system', 'workspace', organizationId] as const,
   dashboard: (filters: Filters) => ['credit-system', 'dashboard', filters] as const,
   operations: (filters: Filters) => ['credit-system', 'operations', filters] as const,
+  accounts: (q: string) => ['credit-system', 'accounts', q] as const,
+  account: (userId: string) => ['credit-system', 'account', userId] as const,
   turn: (turnId: string) => ['credit-system', 'turn', turnId] as const,
 };
 
@@ -57,3 +59,7 @@ export const usePreview = () => useMutation({ mutationFn: (input: { verifiedCost
 export const useSavePlanBudget = () => useSettingsMutation((input: { slug: string; plan: PlanBudgetInput }) => creditSystemApi.savePlan(input.slug, input.plan));
 export const useRemovePlanBudget = () => useSettingsMutation((slug: string) => creditSystemApi.removePlan(slug));
 export const useGrantBudget = () => useSettingsMutation((input: { organizationId: string; grant: GrantBudgetInput }) => creditSystemApi.grantBudget(input.organizationId, input.grant));
+
+export const useCreditAccounts = (q: string) => useQuery({ queryKey: systemKeys.accounts(q), queryFn: () => creditSystemApi.accounts(q), retry: false });
+export const useCreditAccount = (userId: string | null) => useQuery({ queryKey: systemKeys.account(userId ?? ''), queryFn: () => creditSystemApi.account(userId!), enabled: Boolean(userId), retry: false });
+export const useSetAccountPlan = () => useSettingsMutation((input: { userId: string; planSlug: string }) => creditSystemApi.setAccountPlan(input.userId, input.planSlug));

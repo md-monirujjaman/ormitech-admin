@@ -33,7 +33,7 @@ describe('AiProvidersPage', () => {
   it('shows the sections, with the connection first, and no provider or plan-access tab', async () => {
     renderWithClient(<AiProvidersPage />);
     expect(screen.getByRole('tab', { name: 'Connection' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Models & pricing' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Models' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Routing' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Instructions' })).toBeTruthy();
     expect(screen.queryByRole('tab', { name: 'Providers' })).toBeNull();
@@ -45,7 +45,7 @@ describe('AiProvidersPage', () => {
   it('moves between sections and loads each section’s data from the API', async () => {
     renderWithClient(<AiProvidersPage />);
     await screen.findByText('https://openrouter.ai/api/v1');
-    await userEvent.click(screen.getByRole('tab', { name: 'Models & pricing' }));
+    await userEvent.click(screen.getByRole('tab', { name: 'Models' }));
     expect(await screen.findByText('Fixture A')).toBeTruthy();
     expect(http.get).toHaveBeenCalledWith('/admin/ai/models');
   });
